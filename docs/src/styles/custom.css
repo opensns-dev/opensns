@@ -1,0 +1,34 @@
+/* OpenSNS Custom Styles */
+
+:root {
+	--sl-color-accent-low: #451a03;
+	--sl-color-accent: #f59e0b;
+	--sl-color-accent-high: #fef3c7;
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #f8fafc;
+	--sl-color-gray-2: #e2e8f0;
+	--sl-color-gray-3: #cbd5e1;
+	--sl-color-gray-4: #94a3b8;
+	--sl-color-gray-5: #64748b;
+	--sl-color-gray-6: #475569;
+	--sl-color-black: #0f172a;
+}
+
+:root[data-theme='dark'] {
+	--sl-color-accent-low: #78350f;
+	--sl-color-accent: #f59e0b;
+	--sl-color-accent-high: #fef3c7;
+	--sl-color-white: #0f172a;
+	--sl-color-gray-1: #1e293b;
+	--sl-color-gray-2: #334155;
+	--sl-color-gray-3: #475569;
+	--sl-color-gray-4: #64748b;
+	--sl-color-gray-5: #94a3b8;
+	--sl-color-gray-6: #cbd5e1;
+	--sl-color-black: #f8fafc;
+}
+
+/* Code block styling */
+.expressive-code {
+	border-radius: 0.5rem;
+}

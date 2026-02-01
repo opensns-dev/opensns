@@ -1,0 +1,116 @@
+---
+title: Quick Start
+description: Get OpenSNS running in 5 minutes
+---
+
+import { Tabs, TabItem, Steps, Aside } from '@astrojs/starlight/components';
+
+This guide will get OpenSNS running on your local machine in under 5 minutes.
+
+## Prerequisites
+
+- Python 3.11+
+- Node.js 18+ or Bun
+- Git
+
+## Installation
+
+<Tabs>
+<TabItem label="Docker (Recommended)">
+
+The fastest way to get started:
+
+```bash
+# Clone the repository
+git clone https://github.com/opensns/opensns.git
+cd opensns
+
+# Copy environment files
+cp backend/.env.example backend/.env
+
+# Start all services
+docker-compose up -d
+```
+
+Access the app:
+- **Frontend**: http://localhost:3000
+- **API Docs**: http://localhost:8000/docs
+
+</TabItem>
+<TabItem label="Manual Setup">
+
+<Steps>
+
+1. **Clone and setup backend**
+
+   ```bash
+   git clone https://github.com/opensns/opensns.git
+   cd opensns/backend
+   
+   # Create virtual environment
+   python -m venv venv
+   source venv/bin/activate  # Windows: venv\Scripts\activate
+   
+   # Install dependencies
+   pip install -r requirements.txt
+   
+   # Install Playwright browser
+   playwright install chromium
+   
+   # Configure environment
+   cp .env.example .env
+   # Edit .env with your settings
+   ```
+
+2. **Start the backend**
+
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+
+3. **Setup frontend** (new terminal)
+
+   ```bash
+   cd opensns/frontend
+   bun install
+   bun dev
+   ```
+
+4. **Open the app**
+
+   Navigate to http://localhost:3000
+
+</Steps>
+
+</TabItem>
+</Tabs>
+
+## First Steps
+
+<Steps>
+
+1. **Register an account**
+   
+   Go to http://localhost:3000/register and create your account.
+
+2. **Configure API keys** (optional)
+   
+   Navigate to Settings and add your API keys:
+   - **OpenAI API Key** - For AI text generation
+   - **Fal.ai API Key** - For image/video generation
+   
+   <Aside type="tip">
+   OpenSNS works without API keys in "fallback mode" - it will use placeholder content for testing.
+   </Aside>
+
+3. **Create your first campaign**
+   
+   Go to Campaigns → Create Campaign, enter a product URL, and watch the AI generate your assets!
+
+</Steps>
+
+## What's Next?
+
+- [Configuration Guide](/getting-started/configuration/) - Customize your setup
+- [API Keys Setup](/guides/api-keys/) - Configure AI providers
+- [Creating Campaigns](/guides/campaigns/) - Learn the campaign workflow

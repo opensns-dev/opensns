@@ -1,0 +1,142 @@
+---
+title: API Keys Setup
+description: Configure AI provider API keys
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+OpenSNS supports multiple AI providers. This guide covers how to get and configure API keys.
+
+## Supported Providers
+
+| Provider | Features | Pricing |
+|----------|----------|---------|
+| **OpenAI** | GPT-4 for text generation | Pay-per-use |
+| **Fal.ai** | Fast image/video generation | Pay-per-use |
+| **Ollama** | Local LLM (free) | Free (self-hosted) |
+| **ComfyUI** | Local image generation | Free (self-hosted) |
+
+## Getting API Keys
+
+<Tabs>
+<TabItem label="OpenAI">
+
+1. Go to [platform.openai.com](https://platform.openai.com)
+2. Sign in or create an account
+3. Navigate to API Keys section
+4. Click "Create new secret key"
+5. Copy the key (starts with `sk-`)
+
+<Aside type="caution">
+OpenAI keys are shown only once. Save it securely!
+</Aside>
+
+</TabItem>
+<TabItem label="Fal.ai">
+
+1. Go to [fal.ai](https://fal.ai)
+2. Sign in with GitHub or Google
+3. Go to Dashboard → API Keys
+4. Create a new key
+5. Copy the key
+
+</TabItem>
+<TabItem label="Firecrawl (Optional)">
+
+Firecrawl improves web scraping for complex sites:
+
+1. Go to [firecrawl.dev](https://firecrawl.dev)
+2. Sign up for an account
+3. Copy your API key from the dashboard
+
+</TabItem>
+</Tabs>
+
+## Configuring Keys
+
+### Option 1: Environment Variables (Global)
+
+Set keys in `backend/.env` for all users:
+
+```bash title="backend/.env"
+OPENAI_API_KEY=sk-your-openai-key
+FAL_KEY=your-fal-key
+```
+
+### Option 2: Settings UI (Per-User)
+
+Each user can configure their own keys:
+
+1. Log in to OpenSNS
+2. Go to **Settings**
+3. Enter your API keys
+4. Click **Save Settings**
+
+<Aside type="tip">
+User keys override environment variables. This allows users to bring their own keys.
+</Aside>
+
+## Key Security
+
+OpenSNS encrypts all stored API keys using Fernet (AES-128):
+
+- Keys are encrypted before storage
+- Only the key owner can use them
+- Keys are never exposed in API responses
+- UI shows only "configured" status, never the actual key
+
+## Testing Connection
+
+After configuring keys, test they work:
+
+1. Go to **Settings**
+2. Click **Test Connection**
+3. Shows status for each configured provider
+
+## Using Local Providers
+
+For privacy or cost savings, use local AI:
+
+### Ollama (Free LLM)
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Pull a model
+ollama pull llama2
+
+# Configure OpenSNS
+OLLAMA_URL=http://localhost:11434
+DEFAULT_LLM_ENGINE=ollama
+```
+
+### ComfyUI (Free Images)
+
+1. Install [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
+2. Start the server
+3. Configure:
+
+```bash
+COMFYUI_URL=http://localhost:8188
+DEFAULT_IMAGE_ENGINE=comfyui
+```
+
+## Fallback Mode
+
+Without API keys, OpenSNS uses "fallback mode":
+
+- Text generation returns placeholder copy
+- Images use product images from scraping
+- Videos use source images
+
+This is useful for testing the workflow without incurring costs.
+
+## API Documentation
+
+Once you have OpenSNS running locally, interactive API documentation is available:
+
+- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+These are auto-generated from the FastAPI backend and always up-to-date.

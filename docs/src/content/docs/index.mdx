@@ -1,0 +1,59 @@
+---
+title: OpenSNS
+description: Open-source AI marketing platform that generates ad creatives from product URLs
+template: splash
+hero:
+  tagline: Generate AI-powered ad creatives from any product URL. Open-source alternative to Zet AI.
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Get Started
+      link: /getting-started/quickstart/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/opensns/opensns
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Features
+
+<CardGrid stagger>
+	<Card title="Product Analysis" icon="magnifier">
+		Automatically scrapes and analyzes product pages to understand features, benefits, and unique selling points.
+	</Card>
+	<Card title="Multi-Angle Strategy" icon="puzzle">
+		Generates multiple marketing angles for A/B testing different messaging approaches.
+	</Card>
+	<Card title="AI Image Generation" icon="seti:image">
+		Creates platform-optimized product images using Fal.ai or ComfyUI backends.
+	</Card>
+	<Card title="Video Generation" icon="youtube">
+		Converts images to short-form videos for TikTok, Reels, and Stories.
+	</Card>
+	<Card title="Ad Copy Generation" icon="pencil">
+		Platform-specific headlines, descriptions, and CTAs for Instagram, Facebook, Google Ads, and Naver.
+	</Card>
+	<Card title="Real-time Progress" icon="rocket">
+		WebSocket-powered live updates showing agent activity during generation.
+	</Card>
+</CardGrid>
+
+## Tech Stack
+
+<CardGrid>
+	<Card title="Backend" icon="seti:python">
+		FastAPI + SQLModel + LangGraph for AI agent orchestration
+	</Card>
+	<Card title="Frontend" icon="seti:typescript">
+		Next.js 15 + shadcn/ui + Tailwind CSS + React Query
+	</Card>
+	<Card title="AI Engines" icon="star">
+		OpenAI / Ollama for LLM, Fal.ai / ComfyUI for images and video
+	</Card>
+	<Card title="Database" icon="seti:db">
+		PostgreSQL for production, SQLite for development
+	</Card>
+</CardGrid>
