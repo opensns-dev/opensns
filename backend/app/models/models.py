@@ -1,8 +1,12 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from enum import Enum
 from typing import List, Optional
 from sqlmodel import Field, Relationship, SQLModel
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC)
 
 
 class CampaignStatus(str, Enum):
@@ -25,7 +29,7 @@ class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
     campaigns: List["Campaign"] = Relationship(back_populates="user")
     settings: Optional["UserSettings"] = Relationship(back_populates="user")
@@ -42,8 +46,7 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):
@@ -73,7 +76,7 @@ class UserSettings(SQLModel, table=True):
     ollama_url: Optional[str] = None
     comfyui_url: Optional[str] = None
 
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=utc_now)
 
     user: Optional[User] = Relationship(back_populates="settings")
 
@@ -99,8 +102,7 @@ class UserSettingsResponse(BaseModel):
     has_fal_key: bool
     has_firecrawl_key: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============ Campaign Models ============
@@ -116,8 +118,8 @@ class Campaign(CampaignBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
     status: CampaignStatus = Field(default=CampaignStatus.PENDING)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
     user: Optional[User] = Relationship(back_populates="campaigns")
     assets: List["Asset"] = Relationship(back_populates="campaign")
@@ -142,7 +144,7 @@ class Asset(SQLModel, table=True):
     asset_metadata: str = Field(
         default="{}"
     )  # JSON string (renamed from 'metadata' which is reserved)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
     campaign: Campaign = Relationship(back_populates="assets")
 
@@ -153,6 +155,6 @@ class AgentLog(SQLModel, table=True):
     agent_name: str
     message: str
     level: str = "INFO"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
     campaign: Campaign = Relationship(back_populates="agents")
