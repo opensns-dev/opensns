@@ -1,6 +1,5 @@
 import httpx
 import base64
-from typing import Dict, Any
 from app.core.interfaces import BaseImageAdapter, AdCreative, GenerationResult
 from app.core.config import settings
 

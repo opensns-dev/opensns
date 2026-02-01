@@ -1,8 +1,5 @@
-from typing import Dict, List, Set
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
-from sqlmodel import Session, select
-from app.db import get_session
-from app.models.models import AgentLog
+from typing import Dict, List
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter(prefix="/ws", tags=["websocket"])
 

@@ -1,10 +1,12 @@
+/**
+ * @vitest-environment jsdom
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useSettings, useUpdateSettings } from '@/hooks/use-settings'
 import type { ReactNode } from 'react'
 
-// Mock the API module
 vi.mock('@/lib/api', () => ({
   api: {
     get: vi.fn(),

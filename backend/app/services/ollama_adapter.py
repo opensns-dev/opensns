@@ -2,7 +2,6 @@ from typing import Type
 from pydantic import BaseModel
 from app.core.interfaces import BaseLLMAdapter
 import httpx
-import json
 
 
 class OllamaAdapter(BaseLLMAdapter):

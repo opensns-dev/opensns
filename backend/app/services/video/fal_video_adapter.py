@@ -1,5 +1,4 @@
 import httpx
-from typing import Dict, Any, List
 from app.services.video.interfaces import (
     BaseVideoAdapter,
     VideoGenerationRequest,

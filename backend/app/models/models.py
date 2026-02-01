@@ -2,7 +2,7 @@ from datetime import datetime, UTC
 from enum import Enum
 from typing import List, Optional
 from sqlmodel import Field, Relationship, SQLModel
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, ConfigDict
 
 
 def utc_now() -> datetime:

@@ -44,7 +44,7 @@ class OpenAIAdapter(BaseLLMAdapter):
         if not self.api_key:
             raise APIKeyNotConfiguredError("OpenAI")
 
-        schema_json = schema.model_json_schema()
+        schema.model_json_schema()
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
