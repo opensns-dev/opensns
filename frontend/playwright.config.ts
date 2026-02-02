@@ -14,14 +14,34 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "chromium",
+      name: "setup",
+      testMatch: /.*\.setup\.ts/,
+    },
+    {
+      name: "auth-tests",
+      testMatch: /auth\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "chromium",
+      testMatch: /^(?!.*auth\.spec\.ts).*\.spec\.ts$/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/user.json",
+      },
+      dependencies: ["setup"],
+    },
   ],
-  webServer: {
-    command: "bun dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  webServer: process.env.CI
+    ? undefined
+    : {
+        command: "bun dev",
+        url: "http://localhost:3000",
+        reuseExistingServer: true,
+        timeout: 120000,
+        env: {
+          NEXT_PUBLIC_API_URL: "http://localhost:8001",
+          NEXT_PUBLIC_WS_URL: "ws://localhost:8001",
+        },
+      },
 });

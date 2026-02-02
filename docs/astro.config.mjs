@@ -11,12 +11,14 @@ export default defineConfig({
 			title: 'OpenSNS',
 			description: 'Open-source AI marketing platform that generates ad creatives from product URLs',
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/opensns/opensns' },
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/opensns-dev/opensns' },
 			],
-			logo: {
-				src: './src/assets/logo.svg',
-				replacesTitle: false,
-			},
+		logo: {
+			light: './src/assets/logo.svg',
+			dark: './src/assets/logo-dark.svg',
+			replacesTitle: false,
+		},
+		favicon: '/favicon.svg',
 			customCss: ['./src/styles/custom.css'],
 			sidebar: [
 				{
@@ -58,7 +60,7 @@ export default defineConfig({
 				},
 			],
 			editLink: {
-				baseUrl: 'https://github.com/opensns/opensns/edit/main/docs/',
+				baseUrl: 'https://github.com/opensns-dev/opensns/edit/main/docs/',
 			},
 			lastUpdated: true,
 		}),

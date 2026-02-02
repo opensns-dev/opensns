@@ -1,5 +1,6 @@
 "use strict";
 
+import Image from "next/image";
 import {
   LayoutDashboard,
   Megaphone,
@@ -52,7 +53,10 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>OpenSNS</SidebarGroupLabel>
+          <SidebarGroupLabel className="flex items-center gap-2">
+            <Image src="/logo-icon.svg" alt="OpenSNS" width={20} height={20} />
+            OpenSNS
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (

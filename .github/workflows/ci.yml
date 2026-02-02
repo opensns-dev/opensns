@@ -121,6 +121,17 @@ jobs:
           API_KEY_ENCRYPTION_KEY: "test-encryption-key-32chars!!"
           DATABASE_URL: "sqlite:///./test.db"
 
+      # Build and start frontend server
+      - name: Start frontend server
+        run: |
+          cd frontend
+          NEXT_PUBLIC_API_URL=http://localhost:8000 bun run build
+          bun run start &
+          sleep 10
+          curl -f http://localhost:3000 || exit 1
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
       # Run E2E tests
       - name: Run E2E tests
         working-directory: frontend

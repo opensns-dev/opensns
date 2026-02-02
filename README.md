@@ -1,45 +1,59 @@
-# OpenSNS - Open-Source AI Marketing Agent Platform
+<p align="center">
+  <img src="docs/src/assets/logo.svg" alt="OpenSNS" width="280" />
+</p>
 
-An open-source AI marketing agent that generates ad creatives from a product URL. Similar to Zet AI but fully open-source.
+<p align="center">
+  <strong>Open-Source AI Marketing Agent Platform</strong>
+</p>
 
-## Features
+<p align="center">
+  <a href="https://github.com/opensns-dev/opensns/actions"><img src="https://github.com/opensns-dev/opensns/workflows/CI/badge.svg" alt="CI"></a>
+  <a href="https://github.com/opensns-dev/opensns/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
+  <a href="https://opensns-dev.github.io/opensns/"><img src="https://img.shields.io/badge/docs-online-green.svg" alt="Docs"></a>
+</p>
 
-- **Product Analysis**: Scrapes and analyzes product pages to understand features and benefits
-- **Competitor Research**: AI-powered competitor analysis and differentiation strategy
-- **Multi-Angle Strategy**: Generates multiple marketing angles for A/B testing
-- **Ad Copy Generation**: Platform-specific ad copy (Instagram, Facebook, Google Ads, Naver)
-- **Image Generation**: AI-generated product images via Fal.ai or ComfyUI
-- **Video Generation**: Image-to-video conversion for TikTok and Stories
-- **Performance Prediction**: AI-powered CTR and engagement predictions
-- **Multi-Platform Optimization**: Automatic resizing for each platform's specs
+<p align="center">
+  AI-powered marketing agent that generates ad creatives from a product URL.<br>
+  Similar to <a href="https://zet.ai">Zet AI</a> but fully open-source.
+</p>
 
-## Tech Stack
+---
 
-- **Backend**: FastAPI + SQLModel + LangGraph
-- **Frontend**: Next.js 15 (App Router) + shadcn/ui + Tailwind CSS
-- **Database**: PostgreSQL (SQLite for dev)
-- **AI Engines**:
-  - LLM: OpenAI / Ollama
-  - Image: Fal.ai / ComfyUI
-  - Video: Fal.ai / Runway / ComfyUI
+## ✨ Features
 
-## Quick Start
+- **🔍 Product Analysis** — Scrapes and analyzes product pages to understand features and benefits
+- **📊 Competitor Research** — AI-powered competitor analysis and differentiation strategy
+- **🎯 Multi-Angle Strategy** — Generates multiple marketing angles for A/B testing
+- **✍️ Ad Copy Generation** — Platform-specific ad copy (Instagram, Facebook, Google Ads, Naver)
+- **🖼️ Image Generation** — AI-generated product images via Fal.ai or ComfyUI
+- **🎬 Video Generation** — Image-to-video conversion for TikTok and Stories
+- **📈 Performance Prediction** — AI-powered CTR and engagement predictions
+- **📱 Multi-Platform Optimization** — Automatic resizing for each platform's specs
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Backend** | FastAPI + SQLModel + LangGraph |
+| **Frontend** | Next.js 15 (App Router) + shadcn/ui + Tailwind CSS |
+| **Database** | PostgreSQL (SQLite for dev) |
+| **LLM** | OpenAI / Ollama |
+| **Image** | Fal.ai / ComfyUI |
+| **Video** | Fal.ai / Runway / ComfyUI |
+
+## 🚀 Quick Start
 
 ### Using Docker (Recommended)
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/opensns.git
+git clone https://github.com/opensns-dev/opensns.git
 cd opensns
 
-# Copy environment files
 cp backend/.env.example backend/.env
 # Edit backend/.env with your API keys
 
-# Start all services
 docker-compose up -d
 
-# Access the app
 # Frontend: http://localhost:3000
 # Backend API: http://localhost:8000
 # API Docs: http://localhost:8000/docs
@@ -47,86 +61,46 @@ docker-compose up -d
 
 ### Manual Setup
 
-#### Backend
+<details>
+<summary><strong>Backend</strong></summary>
 
 ```bash
 cd backend
-
-# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Copy and configure environment
 cp .env.example .env
 # Edit .env with your settings
 
-# Run the server
 uvicorn app.main:app --reload
 ```
 
-#### Frontend
+</details>
+
+<details>
+<summary><strong>Frontend</strong></summary>
 
 ```bash
 cd frontend
-
-# Install dependencies
 bun install
-
-# Copy and configure environment
 cp .env.example .env.local
-# Edit .env.local if needed
 
-# Run development server
 bun dev
 ```
 
-## Configuration
+</details>
 
-### Backend Environment Variables
+## 📖 Documentation
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | Database connection string | `sqlite:///./opensns.db` |
-| `JWT_SECRET_KEY` | Secret for JWT tokens (min 32 chars) | Required |
-| `API_KEY_ENCRYPTION_KEY` | Key for encrypting stored API keys | Required |
-| `OPENAI_API_KEY` | OpenAI API key for LLM | Optional |
-| `FAL_KEY` | Fal.ai API key for image/video | Optional |
-| `DEFAULT_LLM_ENGINE` | Default LLM engine | `openai` |
-| `DEFAULT_IMAGE_ENGINE` | Default image engine | `fal` |
-| `DEFAULT_VIDEO_ENGINE` | Default video engine | `fal-video` |
+Full documentation is available at **[opensns-dev.github.io/opensns](https://opensns-dev.github.io/opensns/)**
 
-### Frontend Environment Variables
+- [Introduction](https://opensns-dev.github.io/opensns/getting-started/introduction/)
+- [Quick Start Guide](https://opensns-dev.github.io/opensns/getting-started/quickstart/)
+- [Configuration](https://opensns-dev.github.io/opensns/getting-started/configuration/)
+- [Architecture Overview](https://opensns-dev.github.io/opensns/architecture/overview/)
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_API_URL` | Backend API URL | `http://localhost:8000` |
-| `NEXT_PUBLIC_WS_URL` | WebSocket URL | `ws://localhost:8000` |
-
-## API Endpoints
-
-### Authentication
-- `POST /auth/register` - Register new user
-- `POST /auth/login` - Login (OAuth2 form)
-- `GET /auth/me` - Get current user
-
-### Campaigns
-- `GET /campaigns` - List user's campaigns
-- `POST /campaigns` - Create new campaign
-- `GET /campaigns/{id}` - Get campaign details
-
-### Settings
-- `GET /settings` - Get user settings
-- `PUT /settings` - Update settings
-- `POST /settings/test-connection` - Test API key connectivity
-
-### Assets
-- `GET /assets` - List generated assets
-- `GET /assets/{id}` - Get asset details
-
-## Supported Platforms
+## 🌐 Supported Platforms
 
 ### Global
 - Instagram (Feed, Story)
@@ -141,7 +115,7 @@ bun dev
 - Naver TV/Shorts (Video)
 - Naver Blog/Cafe (Content Marketing)
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 ┌──────────────────┐     ┌──────────────────┐
@@ -162,49 +136,29 @@ bun dev
 └───────────────┘       └─────────────────┘       └─────────────────┘
 ```
 
-## Development
-
-### Running Tests
+## 🧪 Development
 
 ```bash
 # Backend tests
-cd backend
-pytest
+cd backend && pytest -v
 
 # Frontend tests
-cd frontend
-bun test
+cd frontend && bun test
+
+# E2E tests
+cd frontend && bun e2e
 ```
 
-### Project Structure
+## 📄 License
 
-```
-opensns/
-├── backend/
-│   ├── app/
-│   │   ├── api/          # API routes
-│   │   ├── core/         # Config, auth, utils
-│   │   ├── models/       # SQLModel models
-│   │   └── services/     # Business logic
-│   │       └── agents/   # LangGraph workflow
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── app/          # Next.js pages
-│   │   ├── components/   # React components
-│   │   ├── hooks/        # Custom hooks
-│   │   ├── lib/          # Utilities
-│   │   └── types/        # TypeScript types
-│   ├── package.json
-│   └── Dockerfile
-└── docker-compose.yml
-```
+MIT License — see [LICENSE](LICENSE) for details.
 
-## License
+## 🤝 Contributing
 
-MIT License - see LICENSE file for details.
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## Contributing
+---
 
-Contributions are welcome! Please read CONTRIBUTING.md for guidelines.
+<p align="center">
+  Made with ❤️ by the OpenSNS community
+</p>

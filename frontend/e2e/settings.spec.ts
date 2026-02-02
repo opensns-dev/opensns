@@ -1,157 +1,115 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Settings Page", () => {
-  test.beforeEach(async ({ page }) => {
-    // Mock authentication
-    await page.goto("/");
-    await page.evaluate(() => {
-      localStorage.setItem("token", "mock-jwt-token-for-testing");
-    });
-  });
-
   test("should display settings page with header", async ({ page }) => {
     await page.goto("/settings");
     
-    // Check for settings header
-    const heading = page.locator("h1, h2").first();
-    await expect(heading).toBeVisible();
-    await expect(heading).toContainText(/settings/i);
+    const heading = page.getByRole('heading', { name: /^settings$/i });
+    await expect(heading).toBeVisible({ timeout: 10000 });
   });
 
   test("should have theme toggle options", async ({ page }) => {
     await page.goto("/settings");
     
-    // Look for theme toggle buttons
-    const lightButton = page.locator('button').filter({ hasText: /light/i });
-    const darkButton = page.locator('button').filter({ hasText: /dark/i });
-    const systemButton = page.locator('button').filter({ hasText: /system/i });
+    const heading = page.getByRole('heading', { name: /^settings$/i });
+    await expect(heading).toBeVisible({ timeout: 10000 });
     
-    // At least one theme option should exist
-    const hasThemeOptions = (
-      await lightButton.isVisible().catch(() => false) ||
-      await darkButton.isVisible().catch(() => false) ||
-      await systemButton.isVisible().catch(() => false)
-    );
+    const lightButton = page.getByRole('button', { name: /light/i });
+    const darkButton = page.getByRole('button', { name: /dark/i });
+    const systemButton = page.getByRole('button', { name: /system/i });
     
-    expect(hasThemeOptions).toBeTruthy();
+    await expect(lightButton).toBeVisible();
+    await expect(darkButton).toBeVisible();
+    await expect(systemButton).toBeVisible();
   });
 
   test("should toggle to dark mode", async ({ page }) => {
     await page.goto("/settings");
     
-    const darkButton = page.locator('button').filter({ hasText: /dark/i }).first();
+    const heading = page.getByRole('heading', { name: /^settings$/i });
+    await expect(heading).toBeVisible({ timeout: 10000 });
     
-    if (await darkButton.isVisible()) {
-      await darkButton.click();
-      await page.waitForTimeout(100);
-      
-      // Check if dark class is applied to html element
-      const htmlClass = await page.locator("html").getAttribute("class");
-      expect(htmlClass).toContain("dark");
-    }
+    const darkButton = page.getByRole('button', { name: /dark/i });
+    await expect(darkButton).toBeVisible();
+    await darkButton.click();
+    
+    const htmlClass = await page.locator("html").getAttribute("class");
+    expect(htmlClass).toContain("dark");
   });
 
   test("should toggle to light mode", async ({ page }) => {
     await page.goto("/settings");
     
-    // First enable dark mode
-    const darkButton = page.locator('button').filter({ hasText: /dark/i }).first();
-    if (await darkButton.isVisible()) {
-      await darkButton.click();
-      await page.waitForTimeout(100);
-    }
+    const heading = page.getByRole('heading', { name: /^settings$/i });
+    await expect(heading).toBeVisible({ timeout: 10000 });
     
-    // Then switch to light mode
-    const lightButton = page.locator('button').filter({ hasText: /light/i }).first();
-    if (await lightButton.isVisible()) {
-      await lightButton.click();
-      await page.waitForTimeout(100);
-      
-      // Check if dark class is removed
-      const htmlClass = await page.locator("html").getAttribute("class") || "";
-      expect(htmlClass).not.toContain("dark");
-    }
+    const darkButton = page.getByRole('button', { name: /dark/i });
+    await darkButton.click();
+    
+    const lightButton = page.getByRole('button', { name: /light/i });
+    await lightButton.click();
+    
+    const htmlClass = await page.locator("html").getAttribute("class") || "";
+    expect(htmlClass).not.toContain("dark");
   });
 
   test("should have API key configuration section", async ({ page }) => {
     await page.goto("/settings");
-    await page.waitForLoadState("domcontentloaded");
     
-    // Look for API key related elements
-    const apiKeySection = page.locator('text=/api.*key|openai|fal|engine/i').first();
-    const hasApiSection = await apiKeySection.isVisible().catch(() => false);
+    const heading = page.getByRole('heading', { name: /^settings$/i });
+    await expect(heading).toBeVisible({ timeout: 10000 });
     
-    // API configuration should be present
-    expect(hasApiSection).toBeTruthy();
+    const openaiTextbox = page.getByRole('textbox', { name: /openai api key/i });
+    await expect(openaiTextbox).toBeVisible();
+    
+    const falTextbox = page.getByRole('textbox', { name: /fal\.ai api key/i });
+    await expect(falTextbox).toBeVisible();
   });
 
   test("should have save button", async ({ page }) => {
     await page.goto("/settings");
-    await page.waitForLoadState("domcontentloaded");
     
-    // Look for save button
-    const saveButton = page.locator('button').filter({ hasText: /save|update/i }).first();
+    const heading = page.getByRole('heading', { name: /^settings$/i });
+    await expect(heading).toBeVisible({ timeout: 10000 });
     
+    const saveButton = page.getByRole('button', { name: /save settings/i });
     await expect(saveButton).toBeVisible();
     await expect(saveButton).toBeEnabled();
   });
 });
 
 test.describe("Dashboard Page", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/");
-    await page.evaluate(() => {
-      localStorage.setItem("token", "mock-jwt-token-for-testing");
-    });
-  });
-
   test("should display dashboard with heading", async ({ page }) => {
     await page.goto("/dashboard");
     
-    // Dashboard should have a heading
-    const heading = page.locator("h1, h2").first();
-    await expect(heading).toBeVisible();
+    const heading = page.getByRole('heading', { level: 1 });
+    await expect(heading).toBeVisible({ timeout: 10000 });
   });
 
   test("should have navigation to campaigns", async ({ page }) => {
     await page.goto("/dashboard");
     
-    // Look for link to campaigns
-    const campaignsLink = page.locator('a[href*="campaigns"]').first();
+    const campaignsLink = page.getByRole('link', { name: /campaigns/i }).first();
     await expect(campaignsLink).toBeVisible();
   });
 
   test("should have quick action buttons", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.waitForLoadState("domcontentloaded");
     
-    // Look for action buttons/links
-    const actionButton = page.locator('a, button').filter({ hasText: /create|new|campaign|start/i }).first();
+    const heading = page.getByRole('heading', { level: 1 });
+    await expect(heading).toBeVisible({ timeout: 10000 });
     
-    await expect(actionButton).toBeVisible();
-    await expect(actionButton).toBeEnabled();
+    const newCampaignLink = page.getByRole('link', { name: 'New Campaign', exact: true });
+    await expect(newCampaignLink).toBeVisible();
   });
 
-  test("should display stats or content cards", async ({ page }) => {
+  test("should display stats cards", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.waitForLoadState("domcontentloaded");
     
-    // Look for card elements
-    const cards = page.locator('[class*="card"], [class*="Card"]');
-    const cardCount = await cards.count();
+    const heading = page.getByRole('heading', { level: 1 });
+    await expect(heading).toBeVisible({ timeout: 10000 });
     
-    // Dashboard should have at least one card/section
-    expect(cardCount).toBeGreaterThan(0);
-  });
-
-  test("should show campaign statistics", async ({ page }) => {
-    await page.goto("/dashboard");
-    await page.waitForLoadState("domcontentloaded");
-    
-    // Look for stats-related content
-    const statsContent = page.locator('text=/total|completed|in progress|campaigns|failed/i');
-    const hasStats = await statsContent.first().isVisible().catch(() => false);
-    
-    expect(hasStats).toBeTruthy();
+    const totalCampaigns = page.getByText(/total campaigns/i);
+    await expect(totalCampaigns).toBeVisible();
   });
 });
