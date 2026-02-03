@@ -1,8 +1,10 @@
 from datetime import datetime, UTC, timedelta
+import hashlib
+import hmac
+import logging
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
 from sqlmodel import Session, select, func
-import stripe
 
 from app.core.config import settings
 from app.core.auth import get_current_user
@@ -24,18 +26,23 @@ from app.models.models import (
 )
 
 router = APIRouter(prefix="/billing", tags=["billing"])
+logger = logging.getLogger(__name__)
 
 TIER_TO_PRICE_ID = {
-    PlanTier.BASIC: settings.STRIPE_PRICE_ID_BASIC,
-    PlanTier.PRO: settings.STRIPE_PRICE_ID_PRO,
-    PlanTier.ULTRA: settings.STRIPE_PRICE_ID_ULTRA,
+    PlanTier.BASIC: settings.PADDLE_PRICE_ID_BASIC,
+    PlanTier.PRO: settings.PADDLE_PRICE_ID_PRO,
+    PlanTier.ULTRA: settings.PADDLE_PRICE_ID_ULTRA,
 }
 
+PRICE_ID_TO_TIER = {v: k for k, v in TIER_TO_PRICE_ID.items() if v}
+
 PACK_TO_PRICE_ID = {
-    "PACK_50": settings.STRIPE_PRICE_ID_CREDITS_50,
-    "PACK_150": settings.STRIPE_PRICE_ID_CREDITS_150,
-    "PACK_500": settings.STRIPE_PRICE_ID_CREDITS_500,
+    "PACK_50": settings.PADDLE_PRICE_ID_CREDITS_50,
+    "PACK_150": settings.PADDLE_PRICE_ID_CREDITS_150,
+    "PACK_500": settings.PADDLE_PRICE_ID_CREDITS_500,
 }
+
+PRICE_ID_TO_PACK = {v: k for k, v in PACK_TO_PRICE_ID.items() if v}
 
 
 def get_or_create_subscription(session: Session, user: User) -> Subscription:
@@ -106,6 +113,7 @@ async def get_available_plans():
             "price_display": f"${limits['price_monthly'] / 100:.0f}/mo"
             if limits["price_monthly"] > 0
             else "Free",
+            "paddle_price_id": TIER_TO_PRICE_ID.get(tier),
             **{k: v for k, v in limits.items() if k != "price_monthly"},
         }
         for tier, limits in PLAN_LIMITS.items()
@@ -117,58 +125,22 @@ async def get_credit_packs():
     return {
         pack_id: {
             "id": pack_id,
+            "paddle_price_id": PACK_TO_PRICE_ID.get(pack_id),
             **pack_info,
         }
         for pack_id, pack_info in CREDIT_PACKS.items()
     }
 
 
-@router.post("/topup")
-async def create_topup_checkout(
-    pack_id: str,
-    user: User = Depends(get_current_user),
-    session: Session = Depends(get_session),
-):
-    if pack_id not in CREDIT_PACKS:
-        raise HTTPException(status_code=400, detail=f"Invalid pack: {pack_id}")
+@router.get("/paddle-config")
+async def get_paddle_config(user: User = Depends(get_current_user)):
+    if not settings.PADDLE_API_KEY:
+        raise HTTPException(status_code=503, detail="Paddle not configured")
 
-    if not settings.STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=503, detail="Stripe not configured")
-
-    stripe.api_key = settings.STRIPE_SECRET_KEY
-    price_id = PACK_TO_PRICE_ID.get(pack_id)
-
-    if not price_id:
-        raise HTTPException(
-            status_code=400, detail=f"No price configured for {pack_id}"
-        )
-
-    subscription = get_or_create_subscription(session, user)
-
-    if not subscription.stripe_customer_id:
-        customer = stripe.Customer.create(
-            email=user.email, metadata={"user_id": str(user.id)}
-        )
-        subscription.stripe_customer_id = customer.id
-        session.add(subscription)
-        session.commit()
-
-    pack_info = CREDIT_PACKS[pack_id]
-    checkout_session = stripe.checkout.Session.create(
-        customer=subscription.stripe_customer_id,
-        payment_method_types=["card"],
-        line_items=[{"price": price_id, "quantity": 1}],
-        mode="payment",
-        success_url=f"{settings.FRONTEND_URL}/settings/billing?topup=success",
-        cancel_url=f"{settings.FRONTEND_URL}/settings/billing?topup=canceled",
-        metadata={
-            "user_id": str(user.id),
-            "pack_id": pack_id,
-            "credits": str(pack_info["credits"]),
-        },
-    )
-
-    return {"checkout_url": checkout_session.url}
+    return {
+        "environment": settings.PADDLE_ENVIRONMENT,
+        "customer_email": user.email,
+    }
 
 
 @router.get("/analytics")
@@ -219,175 +191,132 @@ async def get_usage_analytics(
     }
 
 
-@router.post("/checkout")
-async def create_checkout_session(
-    tier: PlanTier,
-    user: User = Depends(get_current_user),
-    session: Session = Depends(get_session),
-):
-    if tier == PlanTier.FREE:
-        raise HTTPException(status_code=400, detail="Cannot checkout for free tier")
+def verify_paddle_signature(request_body: bytes, signature: str) -> bool:
+    if not settings.PADDLE_WEBHOOK_SECRET:
+        return False
 
-    if not settings.STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=503, detail="Stripe not configured")
+    expected = hmac.new(
+        settings.PADDLE_WEBHOOK_SECRET.encode(),
+        request_body,
+        hashlib.sha256,
+    ).hexdigest()
 
-    stripe.api_key = settings.STRIPE_SECRET_KEY
-    price_id = TIER_TO_PRICE_ID.get(tier)
-
-    if not price_id:
-        raise HTTPException(
-            status_code=400, detail=f"No price configured for {tier.value}"
-        )
-
-    subscription = get_or_create_subscription(session, user)
-
-    if not subscription.stripe_customer_id:
-        customer = stripe.Customer.create(
-            email=user.email, metadata={"user_id": str(user.id)}
-        )
-        subscription.stripe_customer_id = customer.id
-        session.add(subscription)
-        session.commit()
-
-    checkout_session = stripe.checkout.Session.create(
-        customer=subscription.stripe_customer_id,
-        payment_method_types=["card"],
-        line_items=[{"price": price_id, "quantity": 1}],
-        mode="subscription",
-        success_url=f"{settings.FRONTEND_URL}/settings/billing?success=true",
-        cancel_url=f"{settings.FRONTEND_URL}/settings/billing?canceled=true",
-        metadata={"user_id": str(user.id), "tier": tier.value},
-    )
-
-    return {"checkout_url": checkout_session.url}
-
-
-@router.post("/portal")
-async def create_portal_session(
-    user: User = Depends(get_current_user),
-    session: Session = Depends(get_session),
-):
-    if not settings.STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=503, detail="Stripe not configured")
-
-    subscription = get_or_create_subscription(session, user)
-
-    if not subscription.stripe_customer_id:
-        raise HTTPException(status_code=400, detail="No billing account found")
-
-    stripe.api_key = settings.STRIPE_SECRET_KEY
-
-    portal_session = stripe.billing_portal.Session.create(
-        customer=subscription.stripe_customer_id,
-        return_url=f"{settings.FRONTEND_URL}/settings/billing",
-    )
-
-    return {"portal_url": portal_session.url}
+    return hmac.compare_digest(signature, expected)
 
 
 @router.post("/webhook")
-async def stripe_webhook(request: Request, session: Session = Depends(get_session)):
-    if not settings.STRIPE_WEBHOOK_SECRET:
+async def paddle_webhook(request: Request, session: Session = Depends(get_session)):
+    if not settings.PADDLE_WEBHOOK_SECRET:
         raise HTTPException(status_code=503, detail="Webhook not configured")
 
     payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
+    signature = request.headers.get("Paddle-Signature", "")
 
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
-        )
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid payload")
-    except stripe.error.SignatureVerificationError:
+    ts_part = ""
+    h1_part = ""
+    for part in signature.split(";"):
+        if part.startswith("ts="):
+            ts_part = part[3:]
+        elif part.startswith("h1="):
+            h1_part = part[3:]
+
+    if not ts_part or not h1_part:
+        raise HTTPException(status_code=400, detail="Invalid signature format")
+
+    signed_payload = f"{ts_part}:{payload.decode()}"
+    expected = hmac.new(
+        settings.PADDLE_WEBHOOK_SECRET.encode(),
+        signed_payload.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    if not hmac.compare_digest(h1_part, expected):
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    if event["type"] == "checkout.session.completed":
-        handle_checkout_completed(session, event["data"]["object"])
-    elif event["type"] == "customer.subscription.updated":
-        handle_subscription_updated(session, event["data"]["object"])
-    elif event["type"] == "customer.subscription.deleted":
-        handle_subscription_deleted(session, event["data"]["object"])
-    elif event["type"] == "invoice.payment_failed":
-        handle_payment_failed(session, event["data"]["object"])
+    try:
+        event = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    event_type = event.get("event_type", "")
+    data = event.get("data", {})
+
+    logger.info(f"Paddle webhook received: {event_type}")
+
+    if event_type == "subscription.created":
+        handle_subscription_created(session, data)
+    elif event_type == "subscription.updated":
+        handle_subscription_updated(session, data)
+    elif event_type == "subscription.canceled":
+        handle_subscription_canceled(session, data)
+    elif event_type == "transaction.completed":
+        handle_transaction_completed(session, data)
 
     return {"status": "ok"}
 
 
-def handle_checkout_completed(session: Session, checkout_data: dict):
-    stripe.api_key = settings.STRIPE_SECRET_KEY
-    user_id = checkout_data.get("metadata", {}).get("user_id")
-    tier_value = checkout_data.get("metadata", {}).get("tier")
-    pack_id = checkout_data.get("metadata", {}).get("pack_id")
-    credits_to_add = checkout_data.get("metadata", {}).get("credits")
-
+def get_user_from_custom_data(session: Session, custom_data: dict) -> Optional[User]:
+    user_id = custom_data.get("user_id")
     if not user_id:
+        return None
+    return session.query(User).filter(User.id == int(user_id)).first()
+
+
+def handle_subscription_created(session: Session, data: dict):
+    custom_data = data.get("custom_data", {})
+    user = get_user_from_custom_data(session, custom_data)
+    if not user:
+        logger.warning(f"Subscription created but no user found: {custom_data}")
         return
 
-    if pack_id and credits_to_add:
-        handle_credit_topup(session, int(user_id), int(credits_to_add))
-        return
+    subscription = get_or_create_subscription(session, user)
 
-    if not tier_value:
-        return
+    items = data.get("items", [])
+    if items:
+        price_id = items[0].get("price", {}).get("id")
+        tier = PRICE_ID_TO_TIER.get(price_id, PlanTier.BASIC)
+        subscription.tier = tier
+        subscription.paddle_price_id = price_id
 
-    subscription = (
-        session.query(Subscription).filter(Subscription.user_id == int(user_id)).first()
-    )
-
-    if not subscription:
-        return
-
-    stripe_sub = stripe.Subscription.retrieve(checkout_data["subscription"])
-
-    subscription.tier = PlanTier(tier_value)
+    subscription.paddle_subscription_id = data.get("id")
+    subscription.paddle_customer_id = data.get("customer_id")
     subscription.status = SubscriptionStatus.ACTIVE
-    subscription.stripe_subscription_id = stripe_sub.id
-    subscription.stripe_price_id = stripe_sub["items"]["data"][0]["price"]["id"]
-    subscription.current_period_start = datetime.fromtimestamp(
-        stripe_sub.current_period_start, tz=UTC
-    )
-    subscription.current_period_end = datetime.fromtimestamp(
-        stripe_sub.current_period_end, tz=UTC
-    )
-    subscription.updated_at = utc_now()
 
+    billing_cycle = data.get("current_billing_period", {})
+    if billing_cycle:
+        subscription.current_period_start = datetime.fromisoformat(
+            billing_cycle.get("starts_at", "").replace("Z", "+00:00")
+        )
+        subscription.current_period_end = datetime.fromisoformat(
+            billing_cycle.get("ends_at", "").replace("Z", "+00:00")
+        )
+
+    subscription.updated_at = utc_now()
     session.add(subscription)
     session.commit()
 
-
-def handle_credit_topup(session: Session, user_id: int, credits: int):
-    usage = (
-        session.query(UsageTracking).filter(UsageTracking.user_id == user_id).first()
-    )
-
-    if not usage:
-        usage = UsageTracking(user_id=user_id, bonus_credits=credits)
-        session.add(usage)
-    else:
-        usage.bonus_credits = (usage.bonus_credits or 0) + credits
-        session.add(usage)
-
-    session.commit()
+    logger.info(f"Subscription created for user {user.id}: {subscription.tier}")
 
 
-def handle_subscription_updated(session: Session, sub_data: dict):
+def handle_subscription_updated(session: Session, data: dict):
+    paddle_sub_id = data.get("id")
     subscription = (
         session.query(Subscription)
-        .filter(Subscription.stripe_subscription_id == sub_data["id"])
+        .filter(Subscription.paddle_subscription_id == paddle_sub_id)
         .first()
     )
 
     if not subscription:
+        logger.warning(f"Subscription not found for update: {paddle_sub_id}")
         return
 
-    subscription.current_period_start = datetime.fromtimestamp(
-        sub_data["current_period_start"], tz=UTC
-    )
-    subscription.current_period_end = datetime.fromtimestamp(
-        sub_data["current_period_end"], tz=UTC
-    )
-    subscription.cancel_at_period_end = sub_data.get("cancel_at_period_end", False)
+    items = data.get("items", [])
+    if items:
+        price_id = items[0].get("price", {}).get("id")
+        tier = PRICE_ID_TO_TIER.get(price_id)
+        if tier:
+            subscription.tier = tier
+            subscription.paddle_price_id = price_id
 
     status_map = {
         "active": SubscriptionStatus.ACTIVE,
@@ -395,17 +324,34 @@ def handle_subscription_updated(session: Session, sub_data: dict):
         "canceled": SubscriptionStatus.CANCELED,
         "trialing": SubscriptionStatus.TRIALING,
     }
-    subscription.status = status_map.get(sub_data["status"], SubscriptionStatus.ACTIVE)
+    paddle_status = data.get("status", "active")
+    subscription.status = status_map.get(paddle_status, SubscriptionStatus.ACTIVE)
+
+    billing_cycle = data.get("current_billing_period", {})
+    if billing_cycle:
+        subscription.current_period_start = datetime.fromisoformat(
+            billing_cycle.get("starts_at", "").replace("Z", "+00:00")
+        )
+        subscription.current_period_end = datetime.fromisoformat(
+            billing_cycle.get("ends_at", "").replace("Z", "+00:00")
+        )
+
+    subscription.cancel_at_period_end = (
+        data.get("scheduled_change", {}).get("action") == "cancel"
+    )
     subscription.updated_at = utc_now()
 
     session.add(subscription)
     session.commit()
 
+    logger.info(f"Subscription updated: {paddle_sub_id}")
 
-def handle_subscription_deleted(session: Session, sub_data: dict):
+
+def handle_subscription_canceled(session: Session, data: dict):
+    paddle_sub_id = data.get("id")
     subscription = (
         session.query(Subscription)
-        .filter(Subscription.stripe_subscription_id == sub_data["id"])
+        .filter(Subscription.paddle_subscription_id == paddle_sub_id)
         .first()
     )
 
@@ -414,8 +360,8 @@ def handle_subscription_deleted(session: Session, sub_data: dict):
 
     subscription.tier = PlanTier.FREE
     subscription.status = SubscriptionStatus.CANCELED
-    subscription.stripe_subscription_id = None
-    subscription.stripe_price_id = None
+    subscription.paddle_subscription_id = None
+    subscription.paddle_price_id = None
     subscription.current_period_start = None
     subscription.current_period_end = None
     subscription.updated_at = utc_now()
@@ -423,23 +369,34 @@ def handle_subscription_deleted(session: Session, sub_data: dict):
     session.add(subscription)
     session.commit()
 
+    logger.info(f"Subscription canceled: {paddle_sub_id}")
 
-def handle_payment_failed(session: Session, invoice_data: dict):
-    customer_id = invoice_data.get("customer")
-    if not customer_id:
+
+def handle_transaction_completed(session: Session, data: dict):
+    custom_data = data.get("custom_data", {})
+
+    if custom_data.get("type") != "credit_topup":
         return
 
-    subscription = (
-        session.query(Subscription)
-        .filter(Subscription.stripe_customer_id == customer_id)
+    user_id = custom_data.get("user_id")
+    credits = custom_data.get("credits")
+
+    if not user_id or not credits:
+        return
+
+    usage = (
+        session.query(UsageTracking)
+        .filter(UsageTracking.user_id == int(user_id))
         .first()
     )
 
-    if not subscription:
-        return
+    if not usage:
+        usage = UsageTracking(user_id=int(user_id), bonus_credits=int(credits))
+        session.add(usage)
+    else:
+        usage.bonus_credits = (usage.bonus_credits or 0) + int(credits)
+        session.add(usage)
 
-    subscription.status = SubscriptionStatus.PAST_DUE
-    subscription.updated_at = utc_now()
-
-    session.add(subscription)
     session.commit()
+
+    logger.info(f"Credit top-up for user {user_id}: +{credits} credits")

@@ -187,16 +187,13 @@ class TestBillingAPI:
         assert "ULTRA" in data
         assert data["BASIC"]["credits_per_month"] == 145
         assert data["PRO"]["credits_per_month"] == 545
+        assert "paddle_price_id" in data["BASIC"]
 
-    def test_checkout_requires_stripe_config(
+    def test_paddle_config_requires_api_key(
         self, client: TestClient, auth_headers: dict
     ):
-        response = client.post("/billing/checkout?tier=BASIC", headers=auth_headers)
+        response = client.get("/billing/paddle-config", headers=auth_headers)
         assert response.status_code == 503
-
-    def test_checkout_rejects_free_tier(self, client: TestClient, auth_headers: dict):
-        response = client.post("/billing/checkout?tier=FREE", headers=auth_headers)
-        assert response.status_code == 400
 
 
 class TestCampaignCreditIntegration:
@@ -231,14 +228,7 @@ class TestCreditPacks:
         assert packs["PACK_50"]["credits"] == 50
         assert packs["PACK_150"]["credits"] == 150
         assert packs["PACK_500"]["credits"] == 500
-
-    def test_topup_requires_stripe_config(self, client: TestClient, auth_headers: dict):
-        response = client.post("/billing/topup?pack_id=PACK_50", headers=auth_headers)
-        assert response.status_code == 503
-
-    def test_topup_rejects_invalid_pack(self, client: TestClient, auth_headers: dict):
-        response = client.post("/billing/topup?pack_id=INVALID", headers=auth_headers)
-        assert response.status_code == 400
+        assert "paddle_price_id" in packs["PACK_50"]
 
 
 class TestBonusCredits:

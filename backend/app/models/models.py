@@ -249,10 +249,10 @@ class Subscription(SQLModel, table=True):
     tier: PlanTier = Field(default=PlanTier.FREE)
     status: SubscriptionStatus = Field(default=SubscriptionStatus.ACTIVE)
 
-    # Stripe integration
-    stripe_customer_id: Optional[str] = Field(default=None, index=True)
-    stripe_subscription_id: Optional[str] = Field(default=None, index=True)
-    stripe_price_id: Optional[str] = None
+    # Paddle integration
+    paddle_customer_id: Optional[str] = Field(default=None, index=True)
+    paddle_subscription_id: Optional[str] = Field(default=None, index=True)
+    paddle_price_id: Optional[str] = None
 
     # Billing cycle
     current_period_start: Optional[datetime] = None

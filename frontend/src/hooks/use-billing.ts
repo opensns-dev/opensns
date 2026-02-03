@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 export interface SubscriptionInfo {
@@ -34,6 +34,7 @@ export interface PlanInfo {
   price_monthly: number;
   price_display: string;
   credits_per_month: number;
+  paddle_price_id: string | null;
   team_members: number;
   api_access: boolean;
   white_label: boolean;
@@ -48,9 +49,15 @@ export interface CreditPackInfo {
   credits: number;
   price_cents: number;
   price_display: string;
+  paddle_price_id: string | null;
 }
 
 export type CreditPacksResponse = Record<string, CreditPackInfo>;
+
+export interface PaddleConfig {
+  environment: "sandbox" | "production";
+  customer_email: string;
+}
 
 export function useBillingOverview() {
   return useQuery<BillingOverview>({
@@ -72,30 +79,6 @@ export function usePlans() {
   });
 }
 
-export function useCreateCheckout() {
-  return useMutation({
-    mutationFn: async (tier: string) => {
-      const { data } = await api.post(`/billing/checkout?tier=${tier}`);
-      return data as { checkout_url: string };
-    },
-    onSuccess: (data) => {
-      window.location.href = data.checkout_url;
-    },
-  });
-}
-
-export function useCreatePortal() {
-  return useMutation({
-    mutationFn: async () => {
-      const { data } = await api.post("/billing/portal");
-      return data as { portal_url: string };
-    },
-    onSuccess: (data) => {
-      window.location.href = data.portal_url;
-    },
-  });
-}
-
 export function useCreditPacks() {
   return useQuery<CreditPacksResponse>({
     queryKey: ["billing", "credit-packs"],
@@ -106,14 +89,12 @@ export function useCreditPacks() {
   });
 }
 
-export function useCreateTopup() {
-  return useMutation({
-    mutationFn: async (packId: string) => {
-      const { data } = await api.post(`/billing/topup?pack_id=${packId}`);
-      return data as { checkout_url: string };
-    },
-    onSuccess: (data) => {
-      window.location.href = data.checkout_url;
+export function usePaddleConfig() {
+  return useQuery<PaddleConfig>({
+    queryKey: ["billing", "paddle-config"],
+    queryFn: async () => {
+      const { data } = await api.get("/billing/paddle-config");
+      return data;
     },
   });
 }
@@ -132,6 +113,77 @@ export function useUsageAnalytics(days: number = 30) {
     queryFn: async () => {
       const { data } = await api.get(`/billing/analytics?days=${days}`);
       return data;
+    },
+  });
+}
+
+declare global {
+  interface Window {
+    Paddle?: {
+      Environment: {
+        set: (env: "sandbox" | "production") => void;
+      };
+      Checkout: {
+        open: (options: {
+          items: Array<{ priceId: string; quantity: number }>;
+          customer?: { email: string };
+          customData?: Record<string, string>;
+          settings?: {
+            successUrl?: string;
+            displayMode?: "overlay" | "inline";
+          };
+        }) => void;
+      };
+      Initialized: boolean;
+      Setup: (options: { token: string }) => void;
+    };
+  }
+}
+
+export function usePaddleCheckout() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      priceId,
+      email,
+      userId,
+      type = "subscription",
+      credits,
+    }: {
+      priceId: string;
+      email: string;
+      userId: number;
+      type?: "subscription" | "credit_topup";
+      credits?: number;
+    }) => {
+      if (!window.Paddle) {
+        throw new Error("Paddle not loaded");
+      }
+
+      const customData: Record<string, string> = {
+        user_id: String(userId),
+        type,
+      };
+
+      if (credits) {
+        customData.credits = String(credits);
+      }
+
+      window.Paddle.Checkout.open({
+        items: [{ priceId, quantity: 1 }],
+        customer: { email },
+        customData,
+        settings: {
+          successUrl: `${window.location.origin}/settings/billing?success=true`,
+          displayMode: "overlay",
+        },
+      });
+    },
+    onSuccess: () => {
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["billing"] });
+      }, 2000);
     },
   });
 }
