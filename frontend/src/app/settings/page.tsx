@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Moon, Sun, Monitor } from "lucide-react";
+import { Moon, Sun, Monitor, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { useSettings, useUpdateSettings, useTestConnection } from "@/hooks/use-settings";
 import { Button } from "@/components/ui/button";
@@ -141,6 +141,23 @@ export default function SettingsPage() {
           Configure your API keys and engine preferences
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Billing & Subscription
+          </CardTitle>
+          <CardDescription>
+            Manage your subscription, view usage, and upgrade your plan
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild>
+            <a href="/settings/billing">Manage Billing</a>
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -7,6 +7,7 @@ import {
   Images,
   ScrollText,
   Settings,
+  CreditCard,
 } from "lucide-react";
 
 import {
@@ -45,6 +46,11 @@ const items = [
     title: "Settings",
     url: "/settings",
     icon: Settings,
+  },
+  {
+    title: "Billing",
+    url: "/settings/billing",
+    icon: CreditCard,
   },
 ];
 

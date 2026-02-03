@@ -10,6 +10,7 @@ from app.api.videos import router as video_router
 from app.api.websocket import router as websocket_router
 from app.api.auth import router as auth_router
 from app.api.settings import router as settings_router
+from app.api.billing import router as billing_router
 from app.initializers import register_engines
 from app.core.http_client import http_client_manager
 from app.core.error_handlers import register_error_handlers
@@ -45,6 +46,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(settings_router)
+app.include_router(billing_router)
 app.include_router(campaign_router)
 app.include_router(asset_router)
 app.include_router(log_router)

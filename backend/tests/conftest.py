@@ -53,6 +53,8 @@ def test_user_fixture(session: Session) -> User:
         email="test@example.com",
         hashed_password=get_password_hash("testpassword123"),
         is_active=True,
+        is_verified=True,
+        auth_provider="email",
     )
     session.add(user)
     session.commit()

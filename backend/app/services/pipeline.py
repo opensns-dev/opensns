@@ -6,6 +6,7 @@ from app.models.models import (
     Asset,
     AssetType,
     UserSettings,
+    User,
 )
 from app.db import engine
 from sqlmodel import Session
@@ -186,6 +187,8 @@ async def _save_final_state(campaign_id: int, final_state: AgentState):
         if not campaign:
             return
 
+        user = session.get(User, campaign.user_id)
+
         for copy in final_state.get("generated_copies", []):
             asset = Asset(
                 campaign_id=campaign_id,
@@ -195,7 +198,9 @@ async def _save_final_state(campaign_id: int, final_state: AgentState):
             )
             session.add(asset)
 
-        for image in final_state.get("generated_images", []):
+        generated_images = final_state.get("generated_images", [])
+        for image in generated_images:
+            is_fallback = image.metadata.get("fallback", False)
             asset = Asset(
                 campaign_id=campaign_id,
                 type=AssetType.IMAGE,
@@ -204,7 +209,9 @@ async def _save_final_state(campaign_id: int, final_state: AgentState):
             )
             session.add(asset)
 
-        for video in final_state.get("generated_videos", []):
+        generated_videos = final_state.get("generated_videos", [])
+        for video in generated_videos:
+            is_fallback = video.metadata.get("fallback", False)
             asset = Asset(
                 campaign_id=campaign_id,
                 type=AssetType.VIDEO,
@@ -212,6 +219,24 @@ async def _save_final_state(campaign_id: int, final_state: AgentState):
                 asset_metadata=json.dumps(video.metadata),
             )
             session.add(asset)
+
+        if user:
+            from app.services.usage import use_image_credits, use_video_credits
+
+            real_images = [
+                img
+                for img in generated_images
+                if not img.metadata.get("fallback", False)
+            ]
+            real_videos = [
+                vid
+                for vid in generated_videos
+                if not vid.metadata.get("fallback", False)
+            ]
+            if real_images:
+                use_image_credits(session, user, len(real_images))
+            if real_videos:
+                use_video_credits(session, user, len(real_videos))
 
         for optimized in final_state.get("optimized_assets", []):
             asset_type = (

@@ -13,6 +13,7 @@ from app.models.models import Campaign, CampaignStatus, CampaignCreate, User, As
 from app.services.pipeline import run_campaign_pipeline, approve_and_resume
 from app.core.auth import get_current_user
 from app.core.rate_limit import limiter
+from app.services.usage import check_image_credits
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,8 @@ async def create_campaign(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    check_image_credits(session, current_user, 3)
+
     campaign = Campaign(
         **campaign_in.model_dump(),
         user_id=current_user.id,
