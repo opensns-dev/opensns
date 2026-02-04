@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
@@ -34,7 +35,7 @@ const TIER_COLORS: Record<string, string> = {
   ULTRA: "bg-purple-500",
 };
 
-export default function BillingPage() {
+function BillingContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { data: overview, isLoading: overviewLoading, refetch: refetchOverview } = useBillingOverview();
@@ -397,5 +398,21 @@ export default function BillingPage() {
         </Card>
       </div>
     </>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center p-8">
+      <div className="text-zinc-500">Loading billing information...</div>
+    </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <BillingContent />
+    </Suspense>
   );
 }
