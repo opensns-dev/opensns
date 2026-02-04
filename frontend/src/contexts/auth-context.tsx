@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, setToken, removeToken, getToken } from "@/lib/api";
+import { api, logout as apiLogout } from "@/lib/api";
 import type { User } from "@/types";
 
 interface AuthContextType {
@@ -15,10 +15,9 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  loginWithToken: (token: string) => Promise<void>;
   googleLogin: () => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,12 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      fetchUser();
-    } else {
-      setIsLoading(false);
-    }
+    fetchUser();
   }, []);
 
   const fetchUser = async () => {
@@ -41,7 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await api.get<User>("/auth/me");
       setUser(response.data);
     } catch {
-      removeToken();
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -53,16 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     formData.append("username", email);
     formData.append("password", password);
 
-    const response = await api.post<{ access_token: string }>("/auth/login", formData, {
+    await api.post<{ access_token: string }>("/auth/login", formData, {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
 
-    setToken(response.data.access_token);
-    await fetchUser();
-  };
-
-  const loginWithToken = async (token: string) => {
-    setToken(token);
     await fetchUser();
   };
 
@@ -76,8 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await api.post("/auth/register", { email, password });
   };
 
-  const logout = () => {
-    removeToken();
+  const logout = async () => {
+    await apiLogout();
     setUser(null);
   };
 
@@ -88,7 +75,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         login,
-        loginWithToken,
         googleLogin,
         register,
         logout,

@@ -52,6 +52,8 @@ class User(UserBase, table=True):
     auth_provider: str = Field(default="email")
     google_id: Optional[str] = Field(default=None, unique=True, index=True)
     created_at: datetime = Field(default_factory=utc_now)
+    failed_login_attempts: int = Field(default=0)
+    locked_until: Optional[datetime] = Field(default=None)
 
     campaigns: List["Campaign"] = Relationship(back_populates="user")
     settings: Optional["UserSettings"] = Relationship(back_populates="user")
@@ -78,6 +80,7 @@ class UserResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    refresh_token: Optional[str] = None
 
 
 class TokenData(BaseModel):
@@ -303,6 +306,17 @@ class CreditUsageLog(SQLModel, table=True):
     resource_type: str = Field(default="image")
     credits: int = Field(default=1)
     campaign_id: Optional[int] = Field(default=None, foreign_key="campaign.id")
+
+    user: Optional["User"] = Relationship()
+
+
+class RefreshToken(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    token: str = Field(index=True, unique=True)
+    expires_at: datetime
+    revoked: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=utc_now)
 
     user: Optional["User"] = Relationship()
 

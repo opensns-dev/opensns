@@ -18,6 +18,7 @@ from app.core.registry import engine_registry
 from app.core.config import settings
 from app.core.exceptions import APIKeyNotConfiguredError, EngineNotFoundError
 from app.core.interfaces import AdCreative
+from app.core.sanitization import sanitize_for_prompt, sanitize_url
 
 logger = logging.getLogger(__name__)
 
@@ -285,19 +286,41 @@ async def research_node(state: AgentState) -> dict[str, Any]:
     firecrawl_key = state.get("firecrawl_api_key")
     research_service = ResearchService(firecrawl_api_key=firecrawl_key)
 
-    research_data = await research_service.scrape_url(state.get("product_url", ""))
+    product_url = sanitize_url(state.get("product_url", ""))
+    if not product_url:
+        return {
+            "product_context": "Invalid or missing product URL",
+            "research_data": {},
+            "current_step": "competitor_analysis",
+        }
 
-    features_str = ", ".join(research_data.get("features", []))
+    research_data = await research_service.scrape_url(product_url)
+
+    title = sanitize_for_prompt(research_data.get("title", "Unknown"), max_length=200)
+    description = sanitize_for_prompt(
+        research_data.get("description", "No description"), max_length=500
+    )
+    features = [
+        sanitize_for_prompt(f, max_length=100)
+        for f in research_data.get("features", [])
+    ]
+    content = sanitize_for_prompt(research_data.get("content", ""), max_length=1500)
+    price = sanitize_for_prompt(
+        str(research_data.get("price") or "Not available"), max_length=50
+    )
+    source = sanitize_for_prompt(research_data.get("source", "unknown"), max_length=100)
+
+    features_str = ", ".join(features)
     images_str = ", ".join(research_data.get("images", [])[:3])
 
     product_context = f"""
-    Title: {research_data.get("title", "Unknown")}
-    Description: {research_data.get("description", "No description")}
+    Title: {title}
+    Description: {description}
     Features: {features_str or "Not available"}
-    Price: {research_data.get("price") or "Not available"}
+    Price: {price}
     Images: {images_str or "Not available"}
-    Content: {research_data.get("content", "")[:1500]}
-    Source: {research_data.get("source", "unknown")}
+    Content: {content}
+    Source: {source}
     """
 
     return {

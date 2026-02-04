@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { api, setToken } from "@/lib/api";
+import { api } from "@/lib/api";
 import {
   Card,
   CardDescription,
@@ -38,10 +38,9 @@ export default function GoogleCallbackPage() {
 
     const handleCallback = async () => {
       try {
-        const response = await api.post<{ access_token: string }>(
-          `/auth/google/callback?code=${encodeURIComponent(code)}`
+        await api.post(
+          `/auth/google/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`
         );
-        setToken(response.data.access_token);
         router.push("/dashboard");
       } catch (err: unknown) {
         setError(

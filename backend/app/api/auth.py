@@ -1,8 +1,20 @@
 import secrets
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
+import time
+from datetime import timezone
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    Request,
+    Query,
+    Response,
+    Cookie,
+)
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 from datetime import timedelta
+from typing import Optional
 import httpx
 
 from app.db import get_session
@@ -12,12 +24,14 @@ from app.models.models import (
     UserResponse,
     Token,
     UserSettings,
+    RefreshToken,
     utc_now,
 )
 from app.core.auth import (
     get_password_hash,
     verify_password,
     create_access_token,
+    create_refresh_token,
     get_current_user,
 )
 from app.core.config import settings
@@ -25,6 +39,34 @@ from app.core.rate_limit import limiter
 from app.services.email import send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+OAUTH_STATE_EXPIRY_SECONDS = 600
+oauth_state_store: dict[str, float] = {}
+
+ACCESS_TOKEN_COOKIE_NAME = "access_token"
+
+MAX_FAILED_LOGIN_ATTEMPTS = 5
+ACCOUNT_LOCKOUT_MINUTES = 15
+
+
+def set_access_token_cookie(response: Response, token: str) -> None:
+    is_localhost = settings.FRONTEND_URL.startswith("http://localhost")
+    response.set_cookie(
+        key=ACCESS_TOKEN_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=not is_localhost,
+        samesite="lax",
+        path="/",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+
+def clear_access_token_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=ACCESS_TOKEN_COOKIE_NAME,
+        path="/",
+    )
 
 
 def generate_verification_token() -> str:
@@ -144,6 +186,7 @@ async def resend_verification(
 @limiter.limit("20/minute")
 async def login(
     request: Request,
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
 ):
@@ -156,12 +199,32 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    if user.locked_until:
+        locked_until = user.locked_until
+        if locked_until.tzinfo is None:
+            locked_until = locked_until.replace(tzinfo=timezone.utc)
+        if utc_now() < locked_until:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is temporarily locked. Please try again later.",
+            )
+
     if not verify_password(form_data.password, user.hashed_password):
+        user.failed_login_attempts += 1
+        if user.failed_login_attempts >= MAX_FAILED_LOGIN_ATTEMPTS:
+            user.locked_until = utc_now() + timedelta(minutes=ACCOUNT_LOCKOUT_MINUTES)
+        session.add(user)
+        session.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    session.add(user)
+    session.commit()
 
     if not user.is_active:
         raise HTTPException(
@@ -181,7 +244,86 @@ async def login(
         expires_delta=access_token_expires,
     )
 
-    return Token(access_token=access_token, token_type="bearer")
+    refresh_token_str, refresh_expires_at = create_refresh_token()
+    refresh_token_obj = RefreshToken(
+        user_id=user.id,
+        token=refresh_token_str,
+        expires_at=refresh_expires_at,
+    )
+    session.add(refresh_token_obj)
+    session.commit()
+
+    set_access_token_cookie(response, access_token)
+
+    return Token(
+        access_token=access_token, token_type="bearer", refresh_token=refresh_token_str
+    )
+
+
+@router.post("/refresh", response_model=Token)
+async def refresh_access_token(
+    refresh_token: str,
+    response: Response,
+    session: Session = Depends(get_session),
+):
+    token_obj = session.exec(
+        select(RefreshToken).where(RefreshToken.token == refresh_token)
+    ).first()
+
+    if not token_obj:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+        )
+
+    if token_obj.revoked:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has been revoked",
+        )
+
+    expires_at = token_obj.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if utc_now() > expires_at:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has expired",
+        )
+
+    user = session.get(User, token_obj.user_id)
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
+        )
+
+    token_obj.revoked = True
+    session.add(token_obj)
+
+    new_refresh_token_str, new_expires_at = create_refresh_token()
+    new_refresh_token_obj = RefreshToken(
+        user_id=user.id,
+        token=new_refresh_token_str,
+        expires_at=new_expires_at,
+    )
+    session.add(new_refresh_token_obj)
+    session.commit()
+
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=access_token_expires,
+    )
+
+    set_access_token_cookie(response, access_token)
+
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        refresh_token=new_refresh_token_str,
+    )
 
 
 @router.get("/google")
@@ -193,6 +335,12 @@ async def google_login():
         )
 
     state = secrets.token_urlsafe(32)
+    oauth_state_store[state] = time.time()
+
+    for old_state, created_at in list(oauth_state_store.items()):
+        if time.time() - created_at > OAUTH_STATE_EXPIRY_SECONDS * 2:
+            del oauth_state_store[old_state]
+
     redirect_uri = f"{settings.FRONTEND_URL}/auth/google/callback"
     google_auth_url = (
         "https://accounts.google.com/o/oauth2/v2/auth?"
@@ -210,8 +358,23 @@ async def google_login():
 @router.post("/google/callback", response_model=Token)
 async def google_callback(
     code: str,
+    state: str,
+    response: Response,
     session: Session = Depends(get_session),
 ):
+    if state not in oauth_state_store:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or missing state parameter",
+        )
+
+    state_created_at = oauth_state_store.pop(state)
+    if time.time() - state_created_at > OAUTH_STATE_EXPIRY_SECONDS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="State parameter has expired. Please try again.",
+        )
+
     if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -306,9 +469,28 @@ async def google_callback(
         expires_delta=access_token_expires,
     )
 
-    return Token(access_token=jwt_token, token_type="bearer")
+    refresh_token_str, refresh_expires_at = create_refresh_token()
+    refresh_token_obj = RefreshToken(
+        user_id=user.id,
+        token=refresh_token_str,
+        expires_at=refresh_expires_at,
+    )
+    session.add(refresh_token_obj)
+    session.commit()
+
+    set_access_token_cookie(response, jwt_token)
+
+    return Token(
+        access_token=jwt_token, token_type="bearer", refresh_token=refresh_token_str
+    )
 
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    clear_access_token_cookie(response)
+    return {"message": "Logged out successfully"}

@@ -1,7 +1,82 @@
-from typing import Dict, List
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from typing import Dict, List, Optional, Generator
+import logging
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Depends
+from sqlmodel import Session
+
+from app.core.auth import verify_token
+from app.db import get_session
+from app.models.models import User, Campaign
 
 router = APIRouter(prefix="/ws", tags=["websocket"])
+logger = logging.getLogger(__name__)
+
+
+async def authenticate_websocket(
+    websocket: WebSocket,
+    campaign_id: int,
+    token: Optional[str],
+    session: Session,
+) -> Optional[User]:
+    """
+    Authenticate WebSocket connection and verify campaign ownership.
+
+    Returns the authenticated user if successful, None otherwise.
+    Closes the WebSocket with appropriate error codes on failure:
+    - 4001: Authentication failed (missing/invalid token)
+    - 4003: Forbidden (user doesn't own the campaign)
+    """
+    if not token:
+        logger.warning(
+            f"WebSocket auth failed for campaign {campaign_id}: missing token"
+        )
+        await websocket.close(code=4001, reason="Missing authentication token")
+        return None
+
+    payload = verify_token(token)
+    if payload is None:
+        logger.warning(
+            f"WebSocket auth failed for campaign {campaign_id}: invalid token"
+        )
+        await websocket.close(code=4001, reason="Invalid or expired token")
+        return None
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        logger.warning(
+            f"WebSocket auth failed for campaign {campaign_id}: no user_id in token"
+        )
+        await websocket.close(code=4001, reason="Invalid token payload")
+        return None
+
+    user = session.get(User, int(user_id))
+    if user is None:
+        logger.warning(
+            f"WebSocket auth failed for campaign {campaign_id}: user {user_id} not found"
+        )
+        await websocket.close(code=4001, reason="User not found")
+        return None
+
+    if not user.is_active:
+        logger.warning(
+            f"WebSocket auth failed for campaign {campaign_id}: user {user_id} inactive"
+        )
+        await websocket.close(code=4001, reason="User account is inactive")
+        return None
+
+    campaign = session.get(Campaign, campaign_id)
+    if campaign is None:
+        logger.warning(f"WebSocket auth failed: campaign {campaign_id} not found")
+        await websocket.close(code=4003, reason="Campaign not found")
+        return None
+
+    if campaign.user_id != user.id:
+        logger.warning(
+            f"WebSocket auth failed: user {user_id} denied access to campaign {campaign_id}"
+        )
+        await websocket.close(code=4003, reason="Access denied to this campaign")
+        return None
+
+    return user
 
 
 class ConnectionManager:
@@ -25,13 +100,14 @@ class ConnectionManager:
                 del self.active_connections[campaign_id]
 
     async def broadcast_to_campaign(self, campaign_id: int, message: dict):
-        """Send a message to all websocket connections for a campaign."""
         if campaign_id in self.active_connections:
             for connection in self.active_connections[campaign_id]:
                 try:
                     await connection.send_json(message)
-                except Exception:
-                    pass  # Connection might be closed
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to send WebSocket message to campaign {campaign_id}: {e}"
+                    )
 
 
 manager = ConnectionManager()
@@ -54,11 +130,16 @@ async def send_agent_log(
 
 
 @router.websocket("/logs/{campaign_id}")
-async def websocket_logs(websocket: WebSocket, campaign_id: int):
+async def websocket_logs(
+    websocket: WebSocket,
+    campaign_id: int,
+    token: Optional[str] = Query(default=None),
+    session: Session = Depends(get_session),
+):
     """
     WebSocket endpoint for real-time agent log streaming.
 
-    Connect to /ws/logs/{campaign_id} to receive live updates.
+    Connect to /ws/logs/{campaign_id}?token=<jwt> to receive live updates.
 
     Messages format:
     {
@@ -68,6 +149,10 @@ async def websocket_logs(websocket: WebSocket, campaign_id: int):
         "level": "INFO"
     }
     """
+    user = await authenticate_websocket(websocket, campaign_id, token, session)
+    if user is None:
+        return
+
     await manager.connect(websocket, campaign_id)
     try:
         # Send initial connection confirmation
@@ -90,12 +175,21 @@ async def websocket_logs(websocket: WebSocket, campaign_id: int):
 
 
 @router.websocket("/campaign/{campaign_id}/status")
-async def websocket_campaign_status(websocket: WebSocket, campaign_id: int):
+async def websocket_campaign_status(
+    websocket: WebSocket,
+    campaign_id: int,
+    token: Optional[str] = Query(default=None),
+    session: Session = Depends(get_session),
+):
     """
     WebSocket endpoint for real-time campaign status updates.
 
     Broadcasts status changes (PENDING -> RESEARCHING -> GENERATING -> COMPLETED).
     """
+    user = await authenticate_websocket(websocket, campaign_id, token, session)
+    if user is None:
+        return
+
     await manager.connect(websocket, campaign_id)
     try:
         await websocket.send_json(
