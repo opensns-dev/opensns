@@ -39,6 +39,7 @@ jobs:
           JWT_SECRET_KEY: "test-secret-key-for-ci-minimum-32-characters"
           API_KEY_ENCRYPTION_KEY: "test-encryption-key-32chars!!"
           DATABASE_URL: "sqlite:///./test.db"
+          TESTING: "1"
         run: pytest -v
 
   frontend:
