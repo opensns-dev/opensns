@@ -13,8 +13,8 @@
 </p>
 
 <p align="center">
-  AI-powered marketing agent that generates ad creatives from a product URL.<br>
-  Similar to <a href="https://zet.ai">Zet AI</a> but fully open-source.
+  Self-hostable AI marketing agent that generates ad creatives from a product URL.<br>
+  100% open-source. Own your data. No vendor lock-in.
 </p>
 
 ---
@@ -49,10 +49,15 @@
 git clone https://github.com/opensns-dev/opensns.git
 cd opensns
 
-cp backend/.env.example backend/.env
-# Edit backend/.env with your API keys
+# Copy and configure environment
+cp .env.example .env
 
-docker-compose up -d
+# Generate required secrets (or set manually)
+# JWT_SECRET_KEY and API_KEY_ENCRYPTION_KEY are required
+# Generate with: openssl rand -hex 32
+
+# Start all services
+docker compose up -d
 
 # Frontend: http://localhost:3000
 # Backend API: http://localhost:8000

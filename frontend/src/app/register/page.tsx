@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
@@ -40,18 +41,25 @@ function GoogleIcon() {
 }
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { register, googleLogin, isAuthenticated, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { register, googleLogin } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace("/dashboard");
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       await register(email, password);
@@ -61,7 +69,7 @@ export default function RegisterPage() {
         err instanceof Error ? err.message : "Registration failed. Please try again."
       );
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -74,6 +82,14 @@ export default function RegisterPage() {
       setIsGoogleLoading(false);
     }
   };
+
+  if (isLoading || isAuthenticated) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="animate-pulse text-zinc-500 font-medium">Loading...</div>
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (
@@ -131,7 +147,7 @@ export default function RegisterPage() {
             variant="outline"
             className="w-full"
             onClick={handleGoogleLogin}
-            disabled={isGoogleLoading || isLoading}
+            disabled={isGoogleLoading || isSubmitting}
           >
             <GoogleIcon />
             <span className="ml-2">
@@ -160,7 +176,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -173,12 +189,12 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                disabled={isLoading}
+                disabled={isSubmitting}
               />
               <p className="text-xs text-zinc-500">Minimum 8 characters</p>
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create account"}
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Creating account..." : "Create account"}
             </Button>
           </form>
         </CardContent>

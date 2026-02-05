@@ -28,7 +28,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Use standalone for Docker, export for static hosting
+  output: process.env.BUILD_STANDALONE === "true" ? "standalone" : "export",
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
   async headers() {
     return [
       {

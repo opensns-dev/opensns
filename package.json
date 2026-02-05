@@ -1,0 +1,10 @@
+{
+  "name": "opensns",
+  "private": true,
+  "scripts": {
+    "build": "npm run build:frontend && npm run build:docs && npm run merge",
+    "build:frontend": "cd frontend && bun install && bun run build",
+    "build:docs": "cd docs && bun install && bun run build",
+    "merge": "cp -r docs/dist frontend/out/docs && cp frontend/public/_routes.json frontend/out/_routes.json"
+  }
+}

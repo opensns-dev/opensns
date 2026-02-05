@@ -6,6 +6,9 @@ from app.services.image.comfyui_adapter import ComfyUIAdapter
 from app.services.image.fal_adapter import FalAIAdapter, FluxProAdapter
 from app.services.video.fal_video_adapter import FalVideoAdapter, RunwayAdapter
 from app.services.video.comfyui_video_adapter import ComfyUIVideoAdapter
+from app.services.video.heygen_adapter import HeyGenAdapter
+from app.services.video.did_adapter import DIDAdapter
+from app.services.video.sadtalker_adapter import SadTalkerAdapter
 from app.core.config import settings
 
 
@@ -32,4 +35,13 @@ def register_engines():
     )
     engine_registry.register_video_engine(
         "comfyui-video", lambda: ComfyUIVideoAdapter()
+    )
+    engine_registry.register_video_engine(
+        "heygen", lambda: HeyGenAdapter(api_key=settings.HEYGEN_API_KEY)
+    )
+    engine_registry.register_video_engine(
+        "d-id", lambda: DIDAdapter(api_key=settings.DID_API_KEY)
+    )
+    engine_registry.register_video_engine(
+        "sadtalker", lambda: SadTalkerAdapter(endpoint_url=settings.SADTALKER_URL)
     )

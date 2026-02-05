@@ -31,11 +31,17 @@ async def get_settings(
         default_llm_engine=user_settings.default_llm_engine,
         default_image_engine=user_settings.default_image_engine,
         default_video_engine=user_settings.default_video_engine,
+        default_ugc_engine=user_settings.default_ugc_engine,
+        ugc_enabled=user_settings.ugc_enabled,
+        ugc_avatar_id=user_settings.ugc_avatar_id,
+        ugc_voice_id=user_settings.ugc_voice_id,
         ollama_url=user_settings.ollama_url,
         comfyui_url=user_settings.comfyui_url,
         has_openai_key=bool(user_settings.openai_api_key),
         has_fal_key=bool(user_settings.fal_api_key),
         has_firecrawl_key=bool(user_settings.firecrawl_api_key),
+        has_heygen_key=bool(user_settings.heygen_api_key),
+        has_did_key=bool(user_settings.did_api_key),
     )
 
 
@@ -73,6 +79,18 @@ async def update_settings(
             settings.API_KEY_ENCRYPTION_KEY,
         )
 
+    if "heygen_api_key" in update_data and update_data["heygen_api_key"]:
+        update_data["heygen_api_key"] = encrypt_api_key(
+            update_data["heygen_api_key"],
+            settings.API_KEY_ENCRYPTION_KEY,
+        )
+
+    if "did_api_key" in update_data and update_data["did_api_key"]:
+        update_data["did_api_key"] = encrypt_api_key(
+            update_data["did_api_key"],
+            settings.API_KEY_ENCRYPTION_KEY,
+        )
+
     for key, value in update_data.items():
         setattr(user_settings, key, value)
 
@@ -84,11 +102,17 @@ async def update_settings(
         default_llm_engine=user_settings.default_llm_engine,
         default_image_engine=user_settings.default_image_engine,
         default_video_engine=user_settings.default_video_engine,
+        default_ugc_engine=user_settings.default_ugc_engine,
+        ugc_enabled=user_settings.ugc_enabled,
+        ugc_avatar_id=user_settings.ugc_avatar_id,
+        ugc_voice_id=user_settings.ugc_voice_id,
         ollama_url=user_settings.ollama_url,
         comfyui_url=user_settings.comfyui_url,
         has_openai_key=bool(user_settings.openai_api_key),
         has_fal_key=bool(user_settings.fal_api_key),
         has_firecrawl_key=bool(user_settings.firecrawl_api_key),
+        has_heygen_key=bool(user_settings.heygen_api_key),
+        has_did_key=bool(user_settings.did_api_key),
     )
 
 

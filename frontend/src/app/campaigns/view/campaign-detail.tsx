@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { 
   ArrowLeft, 
   ImageIcon, 
@@ -30,8 +29,6 @@ import { useAssets } from "@/hooks/use-assets";
 import { useWebSocket } from "@/hooks/use-websocket";
 import type { Asset, AgentLog, Campaign } from "@/types";
 
-// --- Helper Functions ---
-
 const downloadAsset = async (url: string, filename: string) => {
   try {
     const response = await fetch(url);
@@ -53,8 +50,6 @@ const downloadAsset = async (url: string, filename: string) => {
     });
   }
 };
-
-// --- Helper Components ---
 
 const ProgressIndicator = ({ logs, status }: { logs: AgentLog[]; status: string }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -102,8 +97,6 @@ const ProgressIndicator = ({ logs, status }: { logs: AgentLog[]; status: string 
     </Card>
   );
 };
-
-// --- Asset Components ---
 
 const AssetGrid = ({ type, assets }: { type: Asset["type"]; assets: Asset[] }) => {
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -264,11 +257,7 @@ const AssetGrid = ({ type, assets }: { type: Asset["type"]; assets: Asset[] }) =
   return null;
 };
 
-// --- Page ---
-
-export default function CampaignDetailPage() {
-  const params = useParams();
-  const id = Number(params.id);
+export default function CampaignDetail({ id }: { id: number }) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Asset["type"]>("IMAGE");
   const [isExporting, setIsExporting] = useState(false);

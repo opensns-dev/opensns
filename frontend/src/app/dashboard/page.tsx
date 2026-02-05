@@ -207,7 +207,7 @@ export default function DashboardPage() {
                 {recentCampaigns.map((campaign: Campaign) => (
                   <Link 
                     key={campaign.id} 
-                    href={`/campaigns/${campaign.id}`}
+                    href={`/campaigns/view?id=${campaign.id}`}
                     className="flex items-center justify-between p-3 rounded-lg border hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors group"
                   >
                     <div className="flex-1 min-w-0">

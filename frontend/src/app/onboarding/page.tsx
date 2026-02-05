@@ -74,7 +74,7 @@ export default function OnboardingPage() {
         title: campaignTitle,
         product_url: productUrl,
       });
-      router.push(`/campaigns/${campaign.id}`);
+      router.push(`/campaigns/view?id=${campaign.id}`);
     } catch (error) {
       console.error("Failed to create campaign", error);
     } finally {

@@ -59,9 +59,16 @@ class AgentState(TypedDict):
     firecrawl_api_key: Optional[str]
     ollama_url: Optional[str]
     comfyui_url: Optional[str]
+    heygen_api_key: Optional[str]
+    did_api_key: Optional[str]
     default_llm_engine: Optional[str]
     default_image_engine: Optional[str]
     default_video_engine: Optional[str]
+    default_ugc_engine: Optional[str]
+
+    ugc_enabled: bool
+    ugc_avatar_id: Optional[str]
+    ugc_voice_id: Optional[str]
 
     research_data: Optional[dict]
 
@@ -71,6 +78,7 @@ class AgentState(TypedDict):
     generated_copies: Annotated[List[AdCopy], operator.add]
     generated_images: Annotated[List[GeneratedAsset], operator.add]
     generated_videos: Annotated[List[GeneratedAsset], operator.add]
+    generated_ugc_videos: Annotated[List[GeneratedAsset], operator.add]
     optimized_assets: Annotated[List[GeneratedAsset], operator.add]
 
     performance_predictions: Annotated[List[PerformancePrediction], operator.add]
@@ -87,6 +95,7 @@ class AgentState(TypedDict):
 
     copy_done: bool
     visual_done: bool
+    ugc_done: bool
 
     requires_approval: bool
     is_approved: bool

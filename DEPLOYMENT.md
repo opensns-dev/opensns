@@ -4,9 +4,10 @@
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Vercel        │────▶│   Koyeb         │────▶│   Supabase      │
-│   (Frontend)    │     │   (Backend)     │     │   (PostgreSQL)  │
-│   Next.js 16    │     │   FastAPI       │     │                 │
+│ Cloudflare Pages│────▶│   Koyeb         │────▶│   Supabase      │
+│ (Frontend+Docs) │     │   (Backend)     │     │   (PostgreSQL)  │
+│ Next.js 16 SPA  │     │   FastAPI       │     │                 │
+│ + Starlight     │     │                 │     │                 │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
         │                       │
         │                       │
@@ -30,7 +31,7 @@
    - Settings → Database → Connection Pooling → Enable
    - Use the pooler connection string for `DATABASE_URL`
 
-## Step 2: Koyeb Setup
+## Step 2: Koyeb Setup (Backend)
 
 ### Option A: Via Koyeb Dashboard (Recommended for first deploy)
 
@@ -47,8 +48,8 @@
    DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[REF].supabase.co:5432/postgres
    JWT_SECRET_KEY=[generate with: openssl rand -hex 32]
    API_KEY_ENCRYPTION_KEY=[generate with: openssl rand -hex 32]
-   FRONTEND_URL=https://your-app.vercel.app
-   CORS_ORIGINS=https://your-app.vercel.app,http://localhost:3000
+   FRONTEND_URL=https://opensns.pages.dev
+   CORS_ORIGINS=https://opensns.pages.dev,http://localhost:3000
    OPENAI_API_KEY=[your key]
    FAL_KEY=[your key]
    PADDLE_API_KEY=[your key]
@@ -77,38 +78,44 @@
 
 3. Push to main branch triggers auto-deploy
 
-## Step 3: Vercel Setup
+## Step 3: Cloudflare Pages Setup (Frontend + Docs)
 
-1. Go to https://vercel.com
-2. Import Git Repository → `opensns-dev/opensns`
-3. Configure:
-   - **Root Directory**: `frontend`
-   - **Framework**: Next.js (auto-detected)
-   - **Build Command**: `bun run build`
-   - **Install Command**: `bun install`
+1. Go to https://dash.cloudflare.com
+2. Workers & Pages → Create application → Pages → Connect to Git
+3. Select repository: `opensns-dev/opensns`
+4. Configure:
+   - **Project name**: `opensns`
+   - **Production branch**: `main`
+   - **Root directory**: `/` (project root)
+   - **Build command**: `npm run build`
+   - **Build output directory**: `frontend/out`
 
-4. Environment Variables:
+5. Environment Variables:
    ```
    NEXT_PUBLIC_API_URL=https://opensns-backend-[your-id].koyeb.app
    NEXT_PUBLIC_WS_URL=wss://opensns-backend-[your-id].koyeb.app
    ```
 
-5. Deploy!
+6. Deploy!
+
+**Your URLs:**
+- App: `https://opensns.pages.dev/`
+- Docs: `https://opensns.pages.dev/docs/`
 
 ## Step 4: Update Backend CORS
 
-After Vercel deploy, update Koyeb environment:
+After Cloudflare Pages deploy, update Koyeb environment:
 ```
-FRONTEND_URL=https://opensns-[hash].vercel.app
-CORS_ORIGINS=https://opensns-[hash].vercel.app
+FRONTEND_URL=https://opensns.pages.dev
+CORS_ORIGINS=https://opensns.pages.dev
 ```
 
 ## Step 5: Domain Setup (Optional)
 
-### Custom Domain for Frontend (Vercel)
-1. Vercel → Project → Settings → Domains
+### Custom Domain for Cloudflare Pages
+1. Workers & Pages → opensns → Custom domains
 2. Add your domain (e.g., `opensns.io`)
-3. Update DNS records as instructed
+3. Cloudflare handles DNS automatically if domain is on Cloudflare
 
 ### Custom Domain for Backend (Koyeb)
 1. Koyeb → App → Settings → Domains
@@ -122,7 +129,7 @@ After custom domains:
 FRONTEND_URL=https://opensns.io
 CORS_ORIGINS=https://opensns.io
 
-# Frontend
+# Frontend (Cloudflare Pages)
 NEXT_PUBLIC_API_URL=https://api.opensns.io
 NEXT_PUBLIC_WS_URL=wss://api.opensns.io
 ```
@@ -133,7 +140,7 @@ NEXT_PUBLIC_WS_URL=wss://api.opensns.io
 |---------|------|------|
 | Supabase | Free (500MB) | $0 |
 | Koyeb | Nano x3 regions | ~$8 |
-| Vercel | Hobby | $0 |
+| Cloudflare Pages | Free (unlimited) | $0 |
 | **Total** | | **~$8/month** |
 
 For higher traffic:
@@ -141,8 +148,19 @@ For higher traffic:
 |---------|------|------|
 | Supabase | Pro (8GB) | $25 |
 | Koyeb | Micro x3 regions | ~$16 |
-| Vercel | Pro | $20 |
-| **Total** | | **~$61/month** |
+| Cloudflare Pages | Free (unlimited) | $0 |
+| **Total** | | **~$41/month** |
+
+## Local Development
+
+```bash
+# Build everything locally
+npm run build
+
+# Output structure:
+# frontend/out/        → Next.js static site
+# frontend/out/docs/   → Starlight docs
+```
 
 ## Troubleshooting
 
@@ -162,3 +180,7 @@ For higher traffic:
 ### Health Check Failures
 - Verify `/health` endpoint returns 200
 - Check container startup time (may need to increase timeout)
+
+### SPA Routing (404 on refresh)
+- Cloudflare Pages handles SPA routing via `_redirects` file
+- Already configured in `frontend/public/_redirects`

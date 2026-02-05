@@ -210,7 +210,7 @@ export default function CampaignsPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/campaigns/${campaign.id}`}>View</Link>
+                          <Link href={`/campaigns/view?id=${campaign.id}`}>View</Link>
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>

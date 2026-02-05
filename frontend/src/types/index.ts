@@ -43,22 +43,73 @@ export interface UserSettings {
   default_llm_engine: string | null;
   default_image_engine: string | null;
   default_video_engine: string | null;
+  default_ugc_engine: string | null;
+  ugc_enabled: boolean;
+  ugc_avatar_id: string | null;
+  ugc_voice_id: string | null;
   ollama_url: string | null;
   comfyui_url: string | null;
   has_openai_key: boolean;
   has_fal_key: boolean;
   has_firecrawl_key: boolean;
+  has_heygen_key: boolean;
+  has_did_key: boolean;
 }
 
 export interface UserSettingsUpdate {
   default_llm_engine?: string;
   default_image_engine?: string;
   default_video_engine?: string;
+  default_ugc_engine?: string;
+  ugc_enabled?: boolean;
+  ugc_avatar_id?: string;
+  ugc_voice_id?: string;
   ollama_url?: string;
   comfyui_url?: string;
   openai_api_key?: string;
   fal_api_key?: string;
   firecrawl_api_key?: string;
+  heygen_api_key?: string;
+  did_api_key?: string;
+}
+
+export interface UGCEngineInfo {
+  engine: string;
+  name: string;
+  supports_ugc: boolean;
+  requires_api_key: boolean;
+  has_api_key: boolean;
+}
+
+export interface UGCEnginesResponse {
+  engines: UGCEngineInfo[];
+  default_engine: string | null;
+}
+
+export interface AvatarInfo {
+  avatar_id: string;
+  name: string;
+  preview_url: string | null;
+  gender: string | null;
+  style: string | null;
+}
+
+export interface VoiceInfo {
+  voice_id: string;
+  name: string;
+  language: string;
+  gender: string | null;
+  preview_url: string | null;
+}
+
+export interface AvatarsResponse {
+  avatars: AvatarInfo[];
+  engine: string;
+}
+
+export interface VoicesResponse {
+  voices: VoiceInfo[];
+  engine: string;
 }
 
 export interface GeneratedAsset {

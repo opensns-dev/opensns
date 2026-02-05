@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { UGCSettingsCard } from "@/components/ugc-settings-card";
 
 const LLM_ENGINES = [
   { value: "openai", label: "OpenAI" },
@@ -299,6 +300,8 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <UGCSettingsCard />
 
       <Card>
         <CardHeader>

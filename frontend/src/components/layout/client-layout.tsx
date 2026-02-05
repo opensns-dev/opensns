@@ -1,19 +1,44 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { useAuth } from "@/contexts/auth-context";
+
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/onboarding", "/auth/verify", "/auth/google/callback"];
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isOnboarding = pathname === "/onboarding";
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
-  if (isOnboarding) {
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !isPublicRoute) {
+      router.replace("/login");
+    }
+  }, [isLoading, isAuthenticated, isPublicRoute, router]);
+
+  if (isPublicRoute) {
     return (
       <div className="flex min-h-screen w-full flex-col">
         {children}
       </div>
     );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center">
+        <div className="animate-pulse text-zinc-500 font-medium">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (

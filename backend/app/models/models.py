@@ -97,10 +97,17 @@ class UserSettings(SQLModel, table=True):
     openai_api_key: Optional[str] = None
     fal_api_key: Optional[str] = None
     firecrawl_api_key: Optional[str] = None
+    heygen_api_key: Optional[str] = None
+    did_api_key: Optional[str] = None
 
     default_llm_engine: str = "openai"
     default_image_engine: str = "fal"
     default_video_engine: str = "fal-video"
+    default_ugc_engine: Optional[str] = None
+
+    ugc_enabled: bool = False
+    ugc_avatar_id: Optional[str] = None
+    ugc_voice_id: Optional[str] = None
 
     ollama_url: Optional[str] = None
     comfyui_url: Optional[str] = None
@@ -114,9 +121,15 @@ class UserSettingsUpdate(BaseModel):
     openai_api_key: Optional[str] = None
     fal_api_key: Optional[str] = None
     firecrawl_api_key: Optional[str] = None
+    heygen_api_key: Optional[str] = None
+    did_api_key: Optional[str] = None
     default_llm_engine: Optional[str] = None
     default_image_engine: Optional[str] = None
     default_video_engine: Optional[str] = None
+    default_ugc_engine: Optional[str] = None
+    ugc_enabled: Optional[bool] = None
+    ugc_avatar_id: Optional[str] = None
+    ugc_voice_id: Optional[str] = None
     ollama_url: Optional[str] = None
     comfyui_url: Optional[str] = None
 
@@ -125,11 +138,17 @@ class UserSettingsResponse(BaseModel):
     default_llm_engine: str
     default_image_engine: str
     default_video_engine: str
+    default_ugc_engine: Optional[str]
+    ugc_enabled: bool
+    ugc_avatar_id: Optional[str]
+    ugc_voice_id: Optional[str]
     ollama_url: Optional[str]
     comfyui_url: Optional[str]
     has_openai_key: bool
     has_fal_key: bool
     has_firecrawl_key: bool
+    has_heygen_key: bool
+    has_did_key: bool
 
     model_config = ConfigDict(from_attributes=True)
 

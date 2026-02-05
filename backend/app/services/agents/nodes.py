@@ -642,6 +642,122 @@ async def video_generation_node(state: AgentState) -> dict[str, Any]:
     }
 
 
+def _get_ugc_engine(state: AgentState):
+    engine_name = state.get("default_ugc_engine") or "heygen"
+    heygen_key = state.get("heygen_api_key")
+    did_key = state.get("did_api_key")
+
+    try:
+        if engine_name == "heygen" and heygen_key:
+            from app.services.video.heygen_adapter import HeyGenAdapter
+
+            return HeyGenAdapter(api_key=heygen_key)
+        elif engine_name == "d-id" and did_key:
+            from app.services.video.did_adapter import DIDAdapter
+
+            return DIDAdapter(api_key=did_key)
+        else:
+            engine = engine_registry.get_video_engine(engine_name)
+            if engine and engine.supports_ugc():
+                return engine
+            return engine_registry.get_video_engine("heygen")
+    except (EngineNotFoundError, ValueError) as e:
+        logger.warning(f"Failed to get {engine_name} UGC engine: {e}.")
+        return None
+
+
+async def ugc_video_generation_node(state: AgentState) -> dict[str, Any]:
+    if not state.get("ugc_enabled", False):
+        return {
+            "generated_ugc_videos": [],
+            "ugc_done": True,
+            "current_step": "merge_branches",
+        }
+
+    ugc_engine = _get_ugc_engine(state)
+    generated_ugc_videos: List[GeneratedAsset] = []
+
+    copies = state.get("generated_copies", [])
+    if not copies:
+        logger.warning("No ad copies available for UGC video generation")
+        return {
+            "generated_ugc_videos": [],
+            "ugc_done": True,
+            "current_step": "merge_branches",
+        }
+
+    copy = copies[0]
+    script = f"{copy.headline}. {copy.body}. {copy.cta}"
+
+    if ugc_engine is None:
+        ugc_asset = GeneratedAsset(
+            asset_type="video",
+            content="",
+            platform="tiktok",
+            metadata={
+                "type": "ugc",
+                "fallback": True,
+                "reason": "No UGC engine configured",
+                "script": script[:100],
+            },
+        )
+        generated_ugc_videos.append(ugc_asset)
+        return {
+            "generated_ugc_videos": generated_ugc_videos,
+            "ugc_done": True,
+            "current_step": "merge_branches",
+        }
+
+    try:
+        from app.services.video.interfaces import UGCVideoRequest
+
+        request = UGCVideoRequest(
+            script=script,
+            avatar_id=state.get("ugc_avatar_id"),
+            voice_id=state.get("ugc_voice_id"),
+            language="en",
+            aspect_ratio="9:16",
+        )
+
+        result = await ugc_engine.generate_ugc_video(request)
+
+        ugc_asset = GeneratedAsset(
+            asset_type="video",
+            content=result.video_url or "",
+            platform="tiktok",
+            metadata={
+                "type": "ugc",
+                "script": script[:100],
+                "duration": result.duration,
+                "avatar_id": state.get("ugc_avatar_id"),
+                "voice_id": state.get("ugc_voice_id"),
+                **result.metadata,
+            },
+        )
+        generated_ugc_videos.append(ugc_asset)
+
+    except Exception as e:
+        logger.warning(f"UGC video generation failed: {e}. Using fallback.")
+        ugc_asset = GeneratedAsset(
+            asset_type="video",
+            content="",
+            platform="tiktok",
+            metadata={
+                "type": "ugc",
+                "fallback": True,
+                "error": str(e),
+                "script": script[:100],
+            },
+        )
+        generated_ugc_videos.append(ugc_asset)
+
+    return {
+        "generated_ugc_videos": generated_ugc_videos,
+        "ugc_done": True,
+        "current_step": "merge_branches",
+    }
+
+
 async def merge_parallel_branches(state: AgentState) -> dict[str, Any]:
     return {
         "current_step": "platform_optimizer",

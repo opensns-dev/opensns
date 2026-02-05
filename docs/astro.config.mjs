@@ -4,8 +4,8 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://opensns-dev.github.io',
-	base: '/opensns',
+	site: 'https://opensns.pages.dev',
+	base: '/docs',
 	integrations: [
 		starlight({
 			title: 'OpenSNS',

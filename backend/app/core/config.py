@@ -63,6 +63,10 @@ class Settings(BaseSettings):
     COMFYUI_URL: str = "http://localhost:8188"
     OLLAMA_URL: str = "http://localhost:11434"
 
+    HEYGEN_API_KEY: str | None = None
+    DID_API_KEY: str | None = None
+    SADTALKER_URL: str | None = None
+
     API_KEY_ENCRYPTION_KEY: str
 
     @field_validator("API_KEY_ENCRYPTION_KEY")

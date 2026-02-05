@@ -8,6 +8,7 @@ from app.services.agents.nodes import (
     copy_generation_node,
     image_generation_node,
     video_generation_node,
+    ugc_video_generation_node,
     platform_optimizer_node,
     performance_predictor_node,
     verification_node,
@@ -27,6 +28,7 @@ def build_marketing_graph() -> StateGraph:
     workflow.add_node("copy_generation", copy_generation_node)
     workflow.add_node("image_generation", image_generation_node)
     workflow.add_node("video_generation", video_generation_node)
+    workflow.add_node("ugc_video_generation", ugc_video_generation_node)
     workflow.add_node("merge_branches", merge_parallel_branches)
     workflow.add_node("platform_optimizer", platform_optimizer_node)
     workflow.add_node("performance_predictor", performance_predictor_node)
@@ -59,7 +61,8 @@ def build_marketing_graph() -> StateGraph:
         },
     )
 
-    workflow.add_edge("copy_generation", "merge_branches")
+    workflow.add_edge("copy_generation", "ugc_video_generation")
+    workflow.add_edge("ugc_video_generation", "merge_branches")
     workflow.add_edge("image_generation", "video_generation")
     workflow.add_edge("video_generation", "merge_branches")
     # ...
@@ -103,15 +106,22 @@ async def run_marketing_workflow(
         "firecrawl_api_key": user_config.get("firecrawl_api_key"),
         "ollama_url": user_config.get("ollama_url"),
         "comfyui_url": user_config.get("comfyui_url"),
+        "heygen_api_key": user_config.get("heygen_api_key"),
+        "did_api_key": user_config.get("did_api_key"),
         "default_llm_engine": user_config.get("default_llm_engine"),
         "default_image_engine": user_config.get("default_image_engine"),
         "default_video_engine": user_config.get("default_video_engine"),
+        "default_ugc_engine": user_config.get("default_ugc_engine"),
+        "ugc_enabled": user_config.get("ugc_enabled", False),
+        "ugc_avatar_id": user_config.get("ugc_avatar_id"),
+        "ugc_voice_id": user_config.get("ugc_voice_id"),
         "research_data": None,
         "competitor_insights": [],
         "angles": [],
         "generated_copies": [],
         "generated_images": [],
         "generated_videos": [],
+        "generated_ugc_videos": [],
         "optimized_assets": [],
         "performance_predictions": [],
         "verification_results": [],
@@ -124,6 +134,7 @@ async def run_marketing_workflow(
         "is_complete": False,
         "copy_done": False,
         "visual_done": False,
+        "ugc_done": False,
         "requires_approval": requires_approval,
         "is_approved": not requires_approval,
     }
