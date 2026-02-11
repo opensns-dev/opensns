@@ -60,6 +60,9 @@ export default function LandingPage() {
               <span className="text-xl font-bold text-zinc-900 dark:text-white">OpenSNS</span>
             </div>
             <div className="flex items-center gap-4">
+              <Link href="/pricing/" className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+                Pricing
+              </Link>
               <Link href="https://opensns-dev.github.io/opensns/" target="_blank" className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
                 Docs
               </Link>
@@ -96,8 +99,8 @@ export default function LandingPage() {
           </h1>
           
           <p className="text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto mb-10">
-            Transform any product URL into stunning ad creatives. Our AI agents analyze, strategize, and generate 
-            professional marketing assets automatically.
+            Transform any product URL into complete marketing campaigns. OpenSNS automates
+            research, strategy, copywriting, and creative production across all major ad platforms.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -294,13 +297,27 @@ export default function LandingPage() {
               <span className="text-lg font-bold text-zinc-900 dark:text-white">OpenSNS</span>
             </div>
             <div className="flex items-center gap-8 text-sm text-zinc-600 dark:text-zinc-400">
+              <Link href="/pricing/" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
+                Pricing
+              </Link>
               <Link href="https://opensns-dev.github.io/opensns/" target="_blank" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
                 Documentation
               </Link>
               <Link href="https://github.com/opensns-dev/opensns" target="_blank" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
                 GitHub
               </Link>
-              <span>MIT License</span>
+              <Link href="/terms/" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
+                Terms
+              </Link>
+              <Link href="/privacy/" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
+                Privacy
+              </Link>
+              <Link href="/refund/" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
+                Refund Policy
+              </Link>
+              <Link href="/contact/" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
+                Contact
+              </Link>
             </div>
           </div>
         </div>

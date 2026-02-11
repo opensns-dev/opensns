@@ -15,12 +15,10 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && typeof window !== "undefined") {
       const path = window.location.pathname;
+      const publicPrefixes = ["/login", "/register", "/auth/", "/onboarding", "/pricing", "/terms", "/privacy", "/refund", "/contact"];
       if (
         path !== "/" &&
-        !path.startsWith("/login") &&
-        !path.startsWith("/register") &&
-        !path.startsWith("/auth/") &&
-        !path.startsWith("/onboarding")
+        !publicPrefixes.some((prefix) => path.startsWith(prefix))
       ) {
         window.location.href = "/login/";
       }

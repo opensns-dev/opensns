@@ -7,7 +7,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useAuth } from "@/contexts/auth-context";
 
-const PUBLIC_ROUTES = ["/", "/login", "/register", "/onboarding", "/auth/verify", "/auth/google/callback"];
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/onboarding", "/auth/verify", "/auth/google/callback", "/pricing", "/terms", "/privacy", "/refund", "/contact"];
 
 function isPublicPath(pathname: string): boolean {
   const normalized = pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
