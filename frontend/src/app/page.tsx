@@ -25,7 +25,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push("/dashboard");
+      router.push("/dashboard/");
     }
   }, [isLoading, isAuthenticated, router]);
 
@@ -60,13 +60,13 @@ export default function LandingPage() {
               <span className="text-xl font-bold text-zinc-900 dark:text-white">OpenSNS</span>
             </div>
             <div className="flex items-center gap-4">
-              <Link href="/docs" className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+              <Link href="https://opensns-dev.github.io/opensns/" target="_blank" className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
                 Docs
               </Link>
-              <Link href="/login">
+              <Link href="/login/">
                 <Button variant="ghost" size="sm">Sign In</Button>
               </Link>
-              <Link href="/register">
+              <Link href="/register/">
                 <Button size="sm" className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white border-0">
                   Get Started
                 </Button>
@@ -101,13 +101,13 @@ export default function LandingPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register">
+            <Link href="/register/">
               <Button size="lg" className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white border-0 h-14 px-8 text-lg font-semibold shadow-lg shadow-amber-500/25">
                 Start Creating Free
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
-            <Link href="/docs">
+            <Link href="https://opensns-dev.github.io/opensns/" target="_blank">
               <Button size="lg" variant="outline" className="h-14 px-8 text-lg font-semibold">
                 View Documentation
               </Button>
@@ -268,7 +268,7 @@ export default function LandingPage() {
                 Start free, no credit card required.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/register">
+                <Link href="/register/">
                   <Button size="lg" className="bg-white text-amber-600 hover:bg-zinc-100 h-14 px-8 text-lg font-semibold">
                     Get Started Free
                     <ArrowRight className="ml-2 w-5 h-5" />
@@ -294,7 +294,7 @@ export default function LandingPage() {
               <span className="text-lg font-bold text-zinc-900 dark:text-white">OpenSNS</span>
             </div>
             <div className="flex items-center gap-8 text-sm text-zinc-600 dark:text-zinc-400">
-              <Link href="/docs" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
+              <Link href="https://opensns-dev.github.io/opensns/" target="_blank" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
                 Documentation
               </Link>
               <Link href="https://github.com/opensns-dev/opensns" target="_blank" className="hover:text-zinc-900 dark:hover:text-white transition-colors">

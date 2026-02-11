@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
   Megaphone, 
   CheckCircle, 
@@ -18,21 +20,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCampaigns } from "@/hooks/use-campaigns";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useCampaigns, useCreateCampaign } from "@/hooks/use-campaigns";
+import { getStatusVariant } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Campaign } from "@/types";
-
-function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
-  switch (status.toUpperCase()) {
-    case "COMPLETED":
-      return "default";
-    case "FAILED":
-      return "destructive";
-    case "PENDING":
-      return "outline";
-    default:
-      return "secondary";
-  }
-}
 
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
@@ -50,7 +52,31 @@ function formatRelativeTime(dateString: string): string {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { data: campaigns, isLoading } = useCampaigns();
+  const createCampaign = useCreateCampaign();
+  const [isOpen, setIsOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [productUrl, setProductUrl] = useState("");
+
+  const handleCreate = async () => {
+    if (!title.trim() || !productUrl.trim()) return;
+    try {
+      const campaign = await createCampaign.mutateAsync({
+        title,
+        product_url: productUrl,
+      });
+      setTitle("");
+      setProductUrl("");
+      setIsOpen(false);
+      toast.success("Campaign created", {
+        description: "Your campaign is now being processed.",
+      });
+      router.push(`/campaigns/view?id=${campaign.id}`);
+    } catch {
+      toast.error("Failed to create campaign");
+    }
+  };
 
   const stats = campaigns ? {
     total: campaigns.length,
@@ -147,11 +173,49 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Overview of your marketing campaigns</p>
         </div>
-        <Button asChild>
-          <Link href="/campaigns">
-            <Plus className="mr-2 h-4 w-4" /> New Campaign
-          </Link>
-        </Button>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> New Campaign
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Create Campaign</DialogTitle>
+              <DialogDescription>
+                Enter the product URL to analyze and generate marketing assets.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="dash-title">Campaign Title</Label>
+                <Input
+                  id="dash-title"
+                  placeholder="Summer Collection 2024"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dash-url">Product URL</Label>
+                <Input
+                  id="dash-url"
+                  placeholder="https://example.com/product"
+                  value={productUrl}
+                  onChange={(e) => setProductUrl(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={handleCreate}
+                disabled={createCampaign.isPending || !title.trim() || !productUrl.trim()}
+              >
+                {createCampaign.isPending ? "Creating..." : "Start Analysis"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -183,7 +247,7 @@ export default function DashboardPage() {
               <CardDescription>Your latest marketing campaigns</CardDescription>
             </div>
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/campaigns">
+              <Link href="/campaigns/">
                 View all <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -197,7 +261,7 @@ export default function DashboardPage() {
                   Create your first campaign to get started
                 </p>
                 <Button asChild size="sm">
-                  <Link href="/campaigns">
+                  <Link href="/campaigns/">
                     <Plus className="mr-2 h-4 w-4" /> Create Campaign
                   </Link>
                 </Button>
@@ -244,7 +308,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="grid gap-3">
             <Link 
-              href="/campaigns" 
+              href="/campaigns/" 
               className="flex items-center gap-4 p-4 rounded-lg border hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors group"
             >
               <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30">
@@ -257,7 +321,7 @@ export default function DashboardPage() {
             </Link>
 
             <Link 
-              href="/settings" 
+              href="/settings/" 
               className="flex items-center gap-4 p-4 rounded-lg border hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors group"
             >
               <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30">

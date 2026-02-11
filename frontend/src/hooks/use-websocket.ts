@@ -4,7 +4,26 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
 import type { AgentLog } from "@/types";
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
+function getWsUrl(): string {
+  if (typeof window === "undefined") {
+    return process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
+  }
+  if (process.env.NEXT_PUBLIC_WS_URL) {
+    return process.env.NEXT_PUBLIC_WS_URL;
+  }
+  // Derive WS URL from current page location for Docker/production
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (apiUrl) {
+    try {
+      const url = new URL(apiUrl);
+      return `${protocol}//${url.host}`;
+    } catch {
+      // fallback
+    }
+  }
+  return `${protocol}//${window.location.hostname}:8000`;
+}
 
 export function useWebSocket(campaignId: number) {
   const [logs, setLogs] = useState<AgentLog[]>([]);
@@ -39,7 +58,7 @@ export function useWebSocket(campaignId: number) {
     }
 
     try {
-      const url = `${WS_URL}/ws/logs/${campaignId}`;
+      const url = `${getWsUrl()}/ws/logs/${campaignId}`;
       const socket = new WebSocket(url);
       socketRef.current = socket;
 

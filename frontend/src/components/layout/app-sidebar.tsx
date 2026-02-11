@@ -1,6 +1,8 @@
-"use strict";
+"use client";
 
+import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Megaphone,
@@ -8,6 +10,8 @@ import {
   ScrollText,
   Settings,
   CreditCard,
+  LogOut,
+  Repeat,
 } from "lucide-react";
 
 import {
@@ -20,41 +24,61 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/auth-context";
 
 const items = [
   {
     title: "Dashboard",
-    url: "/dashboard",
+    url: "/dashboard/",
     icon: LayoutDashboard,
   },
   {
     title: "Campaigns",
-    url: "/campaigns",
+    url: "/campaigns/",
     icon: Megaphone,
   },
   {
     title: "Assets",
-    url: "/assets",
+    url: "/assets/",
     icon: Images,
   },
   {
     title: "Logs",
-    url: "/logs",
+    url: "/logs/",
     icon: ScrollText,
   },
   {
+    title: "Repurpose",
+    url: "/repurpose/",
+    icon: Repeat,
+  },
+  {
     title: "Settings",
-    url: "/settings",
+    url: "/settings/",
     icon: Settings,
   },
   {
     title: "Billing",
-    url: "/settings/billing",
+    url: "/settings/billing/",
     icon: CreditCard,
   },
 ];
 
+function isActiveRoute(pathname: string, url: string): boolean {
+  const normalized = pathname.endsWith("/") ? pathname : pathname + "/";
+  if (url === "/dashboard/") return normalized === "/dashboard/";
+  return normalized.startsWith(url);
+}
+
 export function AppSidebar() {
+  const pathname = usePathname();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = "/login/";
+  };
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -67,11 +91,14 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActiveRoute(pathname, item.url)}
+                  >
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -79,6 +106,22 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <div className="mt-auto border-t border-zinc-200 dark:border-zinc-800 p-4">
+        {user && (
+          <p className="text-xs text-muted-foreground truncate mb-3 px-2">
+            {user.email}
+          </p>
+        )}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleLogout}>
+              <LogOut />
+              <span>Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </div>
     </Sidebar>
   );
 }

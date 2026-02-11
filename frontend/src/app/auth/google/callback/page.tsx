@@ -42,7 +42,7 @@ function GoogleCallbackContent() {
         await api.post(
           `/auth/google/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`
         );
-        router.push("/dashboard");
+        router.push("/dashboard/");
       } catch (err: unknown) {
         setError(
           err instanceof Error ? err.message : "Google login failed. Please try again."
@@ -67,7 +67,7 @@ function GoogleCallbackContent() {
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <div className="p-6 pt-0 flex justify-center">
-            <Link href="/login">
+            <Link href="/login/">
               <Button>Back to login</Button>
             </Link>
           </div>

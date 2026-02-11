@@ -35,7 +35,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (!isLoading && !needsOnboarding) {
-      router.push("/dashboard");
+      router.push("/dashboard/");
     }
   }, [isLoading, needsOnboarding, router]);
 

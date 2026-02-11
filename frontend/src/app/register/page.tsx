@@ -52,7 +52,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace("/dashboard/");
     }
   }, [isLoading, isAuthenticated, router]);
 
@@ -115,7 +115,7 @@ export default function RegisterPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
-            <Link href="/login" className="w-full">
+            <Link href="/login/" className="w-full">
               <Button variant="outline" className="w-full">
                 Go to login
               </Button>

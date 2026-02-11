@@ -16,6 +16,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { UGCSettingsCard } from "@/components/ugc-settings-card";
 
 const LLM_ENGINES = [
@@ -155,7 +162,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <Button asChild>
-            <a href="/settings/billing">Manage Billing</a>
+            <a href="/settings/billing/">Manage Billing</a>
           </Button>
         </CardContent>
       </Card>
@@ -313,56 +320,65 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="llm_engine">LLM Engine</Label>
-            <select
-              id="llm_engine"
-              className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            <Select
               value={formData.default_llm_engine}
-              onChange={(e) =>
-                setFormData({ ...formData, default_llm_engine: e.target.value })
+              onValueChange={(value) =>
+                setFormData({ ...formData, default_llm_engine: value })
               }
             >
-              {LLM_ENGINES.map((engine) => (
-                <option key={engine.value} value={engine.value}>
-                  {engine.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select LLM engine" />
+              </SelectTrigger>
+              <SelectContent>
+                {LLM_ENGINES.map((engine) => (
+                  <SelectItem key={engine.value} value={engine.value}>
+                    {engine.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="image_engine">Image Engine</Label>
-            <select
-              id="image_engine"
-              className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            <Select
               value={formData.default_image_engine}
-              onChange={(e) =>
-                setFormData({ ...formData, default_image_engine: e.target.value })
+              onValueChange={(value) =>
+                setFormData({ ...formData, default_image_engine: value })
               }
             >
-              {IMAGE_ENGINES.map((engine) => (
-                <option key={engine.value} value={engine.value}>
-                  {engine.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select image engine" />
+              </SelectTrigger>
+              <SelectContent>
+                {IMAGE_ENGINES.map((engine) => (
+                  <SelectItem key={engine.value} value={engine.value}>
+                    {engine.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="video_engine">Video Engine</Label>
-            <select
-              id="video_engine"
-              className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+            <Select
               value={formData.default_video_engine}
-              onChange={(e) =>
-                setFormData({ ...formData, default_video_engine: e.target.value })
+              onValueChange={(value) =>
+                setFormData({ ...formData, default_video_engine: value })
               }
             >
-              {VIDEO_ENGINES.map((engine) => (
-                <option key={engine.value} value={engine.value}>
-                  {engine.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select video engine" />
+              </SelectTrigger>
+              <SelectContent>
+                {VIDEO_ENGINES.map((engine) => (
+                  <SelectItem key={engine.value} value={engine.value}>
+                    {engine.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

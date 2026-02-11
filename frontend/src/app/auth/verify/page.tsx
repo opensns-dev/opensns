@@ -36,7 +36,7 @@ function VerifyEmailContent() {
         await api.post(`/auth/verify?token=${token}`);
         setStatus("success");
         setTimeout(() => {
-          router.push("/login");
+          router.push("/login/");
         }, 3000);
       } catch (err: unknown) {
         setStatus("error");
@@ -81,7 +81,7 @@ function VerifyEmailContent() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center">
-            <Link href="/login">
+            <Link href="/login/">
               <Button>Go to login</Button>
             </Link>
           </CardFooter>
@@ -106,7 +106,7 @@ function VerifyEmailContent() {
           The verification link may have expired. You can request a new one from the login page.
         </CardContent>
         <CardFooter className="justify-center">
-          <Link href="/login">
+          <Link href="/login/">
             <Button>Back to login</Button>
           </Link>
         </CardFooter>

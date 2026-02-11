@@ -96,6 +96,8 @@ export function usePaddleConfig() {
       const { data } = await api.get("/billing/paddle-config");
       return data;
     },
+    retry: false,
+    meta: { suppressError: true },
   });
 }
 

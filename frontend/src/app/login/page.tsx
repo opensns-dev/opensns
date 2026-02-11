@@ -50,7 +50,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace("/dashboard/");
     }
   }, [isLoading, isAuthenticated, router]);
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push("/dashboard");
+      router.push("/dashboard/");
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Login failed";
       if (errorMessage.includes("verify your email")) {

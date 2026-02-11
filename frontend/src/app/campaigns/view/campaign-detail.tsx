@@ -322,7 +322,7 @@ export default function CampaignDetail({ id }: { id: number }) {
         <h2 className="text-2xl font-bold">Failed to load campaign</h2>
         <p className="text-muted-foreground">The campaign you are looking for might not exist or you do not have access.</p>
         <Button variant="default" asChild>
-          <Link href="/campaigns">Go back to Campaigns</Link>
+          <Link href="/campaigns/">Go back to Campaigns</Link>
         </Button>
       </div>
     );
@@ -347,7 +347,7 @@ export default function CampaignDetail({ id }: { id: number }) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild className="shrink-0">
-            <Link href="/campaigns">
+            <Link href="/campaigns/">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>

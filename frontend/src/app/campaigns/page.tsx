@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Megaphone, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,35 +38,21 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCampaigns, useCreateCampaign, useDeleteCampaign } from "@/hooks/use-campaigns";
-
-function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
-  switch (status.toLowerCase()) {
-    case "completed":
-      return "default";
-    case "failed":
-      return "destructive";
-    case "pending":
-      return "outline";
-    default:
-      return "secondary";
-  }
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
+import { getStatusVariant, formatDate } from "@/lib/utils";
 
 export default function CampaignsPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [productUrl, setProductUrl] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   const { data: campaigns, isLoading, error } = useCampaigns();
   const createCampaign = useCreateCampaign();
   const deleteCampaign = useDeleteCampaign();
+
+  const totalItems = campaigns?.length ?? 0;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const paginatedCampaigns = campaigns?.slice((page - 1) * pageSize, page * pageSize);
 
   const handleCreate = async () => {
     if (!title.trim() || !productUrl.trim()) return;
@@ -194,7 +180,7 @@ export default function CampaignsPage() {
                   </TableRow>
                 ))
               ) : campaigns && campaigns.length > 0 ? (
-                campaigns.map((campaign) => (
+                paginatedCampaigns?.map((campaign) => (
                   <TableRow key={campaign.id}>
                     <TableCell className="font-medium">
                       <p className="truncate max-w-[300px]" title={campaign.title}>
@@ -246,14 +232,54 @@ export default function CampaignsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-zinc-500">
-                    No campaigns yet. Create your first one!
+                  <TableCell colSpan={4} className="h-48">
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <div className="p-3 rounded-full bg-amber-50 dark:bg-amber-950/30 mb-4">
+                        <Megaphone className="h-8 w-8 text-amber-500" />
+                      </div>
+                      <h3 className="font-medium mb-1">No campaigns yet</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Create your first campaign to generate AI marketing assets.
+                      </p>
+                      <Button size="sm" onClick={() => setIsOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" /> Create Campaign
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
           </TableBody>
         </Table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalItems)} of {totalItems}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium">
+              {page} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
