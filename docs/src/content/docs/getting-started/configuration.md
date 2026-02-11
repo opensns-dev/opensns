@@ -7,29 +7,47 @@ import { Aside } from '@astrojs/starlight/components';
 
 OpenSNS is configured through environment variables. This guide covers all available options.
 
-## Backend Configuration
+## Quick Setup
 
-Create a `.env` file in the `backend/` directory:
+### Docker (Recommended)
 
 ```bash
-cp backend/.env.example backend/.env
+cp .env.example .env
+# Edit .env with your settings
 ```
 
-### Required Variables
+### Manual Setup
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `JWT_SECRET_KEY` | Secret for JWT tokens (min 32 chars) | `your-super-secret-key-min-32-chars` |
-| `API_KEY_ENCRYPTION_KEY` | Key for encrypting stored API keys | `your-32-byte-encryption-key-here` |
+```bash
+# Backend
+cp backend/.env.example backend/.env
+
+# Frontend
+cp frontend/.env.example frontend/.env.local
+```
+
+---
+
+## Required Variables
+
+These must be set before starting OpenSNS:
+
+| Variable | Description | How to Generate |
+|----------|-------------|-----------------|
+| `JWT_SECRET_KEY` | Secret for JWT tokens (min 32 chars) | `openssl rand -hex 32` |
+| `API_KEY_ENCRYPTION_KEY` | Key for encrypting stored API keys | `openssl rand -hex 32` |
 
 <Aside type="caution">
 Generate secure random keys for production:
 ```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
+openssl rand -hex 32
 ```
+Never use the example values in production!
 </Aside>
 
-### Database
+---
+
+## Database
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -40,24 +58,41 @@ For PostgreSQL (recommended for production):
 DATABASE_URL=postgresql://user:password@localhost:5432/opensns
 ```
 
-### AI Engine API Keys
+---
 
-These can also be configured per-user in the Settings UI:
+## AI Engine API Keys
+
+These can be set globally (in `.env`) or per-user (in Settings UI):
+
+### LLM & Image Engines
 
 | Variable | Description |
 |----------|-------------|
 | `OPENAI_API_KEY` | OpenAI API key for GPT models |
 | `FAL_KEY` | Fal.ai API key for image/video generation |
 
-### Default Engine Selection
+### UGC Video Engines
+
+| Variable | Description |
+|----------|-------------|
+| `HEYGEN_API_KEY` | HeyGen API key for AI avatar videos |
+| `DID_API_KEY` | D-ID API key for AI avatar videos |
+| `SADTALKER_URL` | Self-hosted SadTalker endpoint URL |
+
+---
+
+## Default Engine Selection
 
 | Variable | Options | Default |
 |----------|---------|---------|
-| `DEFAULT_LLM_ENGINE` | `openai`, `ollama`, `fallback` | `openai` |
-| `DEFAULT_IMAGE_ENGINE` | `fal`, `comfyui` | `fal` |
+| `DEFAULT_LLM_ENGINE` | `openai`, `ollama`, `mock` | `openai` |
+| `DEFAULT_IMAGE_ENGINE` | `fal`, `flux-pro`, `comfyui` | `fal` |
 | `DEFAULT_VIDEO_ENGINE` | `fal-video`, `runway`, `comfyui-video` | `fal-video` |
+| `DEFAULT_UGC_ENGINE` | `heygen`, `d-id`, `sadtalker` | `heygen` |
 
-### Local Engine URLs
+---
+
+## Local/Self-hosted Engine URLs
 
 For self-hosted AI backends:
 
@@ -65,71 +100,148 @@ For self-hosted AI backends:
 |----------|-------------|---------|
 | `OLLAMA_URL` | Ollama API endpoint | `http://localhost:11434` |
 | `COMFYUI_URL` | ComfyUI WebSocket URL | `http://localhost:8188` |
+| `SADTALKER_URL` | SadTalker API endpoint | (none) |
 
-### Full Example
-
-```bash title="backend/.env"
-# Project
-PROJECT_NAME=OpenSNS
-
-# Database
-DATABASE_URL=sqlite:///./opensns.db
-
-# Authentication
-JWT_SECRET_KEY=your-super-secret-key-change-in-production
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=10080
-
-# AI API Keys (or configure per-user in Settings)
-OPENAI_API_KEY=sk-...
-FAL_KEY=...
-
-# Default Engines
-DEFAULT_LLM_ENGINE=openai
-DEFAULT_IMAGE_ENGINE=fal
-DEFAULT_VIDEO_ENGINE=fal-video
-
-# Encryption
-API_KEY_ENCRYPTION_KEY=your-32-byte-encryption-key-here
-```
+---
 
 ## Frontend Configuration
-
-Create a `.env.local` file in the `frontend/` directory:
-
-```bash
-cp frontend/.env.example frontend/.env.local
-```
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NEXT_PUBLIC_API_URL` | Backend API URL | `http://localhost:8000` |
-| `NEXT_PUBLIC_WS_URL` | WebSocket URL | `ws://localhost:8000` |
+| `NEXT_PUBLIC_WS_URL` | WebSocket URL for real-time logs | `ws://localhost:8000` |
 
-### Example
+<Aside type="note">
+`NEXT_PUBLIC_*` variables are embedded at build time. When using Docker, you must rebuild the frontend image if these change.
+</Aside>
+
+---
+
+## CORS & URLs
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `FRONTEND_URL` | Frontend URL (for email links) | `http://localhost:3000` |
+| `CORS_ORIGINS` | Allowed CORS origins (comma-separated) | `http://localhost:3000` |
+
+---
+
+## Billing (Paddle)
+
+| Variable | Description |
+|----------|-------------|
+| `PADDLE_API_KEY` | Paddle API key |
+| `PADDLE_WEBHOOK_SECRET` | Paddle webhook secret |
+| `PADDLE_ENVIRONMENT` | `sandbox` or `production` |
+| `PADDLE_PRICE_ID_BASIC` | Price ID for Basic plan |
+| `PADDLE_PRICE_ID_PRO` | Price ID for Pro plan |
+| `PADDLE_PRICE_ID_ULTRA` | Price ID for Ultra plan |
+| `PADDLE_PRICE_ID_CREDITS_50` | Price ID for 50 credits pack |
+| `PADDLE_PRICE_ID_CREDITS_150` | Price ID for 150 credits pack |
+| `PADDLE_PRICE_ID_CREDITS_500` | Price ID for 500 credits pack |
+
+---
+
+## Email (Resend)
+
+| Variable | Description |
+|----------|-------------|
+| `RESEND_API_KEY` | Resend API key for transactional emails |
+| `EMAIL_FROM` | Sender email address (e.g., `OpenSNS <noreply@yourdomain.com>`) |
+
+---
+
+## OAuth
+
+### Google
+
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+
+---
+
+## Full Example
+
+### Docker (.env in project root)
+
+```bash title=".env"
+# ===========================================
+# REQUIRED
+# ===========================================
+JWT_SECRET_KEY=your-64-char-hex-key-from-openssl-rand
+API_KEY_ENCRYPTION_KEY=your-64-char-hex-key-from-openssl-rand
+
+# ===========================================
+# AI ENGINES (optional - users can set in UI)
+# ===========================================
+OPENAI_API_KEY=sk-...
+FAL_KEY=...
+
+# UGC Video
+HEYGEN_API_KEY=...
+DID_API_KEY=...
+
+# ===========================================
+# DEFAULT ENGINES
+# ===========================================
+DEFAULT_LLM_ENGINE=openai
+DEFAULT_IMAGE_ENGINE=fal
+DEFAULT_VIDEO_ENGINE=fal-video
+DEFAULT_UGC_ENGINE=heygen
+
+# ===========================================
+# URLS (change for production)
+# ===========================================
+FRONTEND_URL=http://localhost:3000
+CORS_ORIGINS=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_WS_URL=ws://localhost:8000
+```
+
+### Backend (backend/.env)
+
+```bash title="backend/.env"
+DATABASE_URL=sqlite:///./opensns.db
+
+JWT_SECRET_KEY=your-secret-key
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+
+API_KEY_ENCRYPTION_KEY=your-encryption-key
+
+OPENAI_API_KEY=sk-...
+FAL_KEY=...
+
+DEFAULT_LLM_ENGINE=openai
+DEFAULT_IMAGE_ENGINE=fal
+DEFAULT_VIDEO_ENGINE=fal-video
+DEFAULT_UGC_ENGINE=heygen
+```
+
+### Frontend (frontend/.env.local)
 
 ```bash title="frontend/.env.local"
 NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_WS_URL=ws://localhost:8000
 ```
 
-## Docker Configuration
-
-When using Docker, configure via `docker-compose.yml` or environment:
-
-```yaml title="docker-compose.yml"
-services:
-  backend:
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/opensns
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - API_KEY_ENCRYPTION_KEY=${API_KEY_ENCRYPTION_KEY}
-```
+---
 
 ## Security Best Practices
 
 1. **Never commit `.env` files** - They're in `.gitignore` by default
-2. **Use strong random keys** - Generate with `secrets.token_urlsafe(32)`
+2. **Use strong random keys** - Generate with `openssl rand -hex 32`
 3. **Rotate keys periodically** - Especially `JWT_SECRET_KEY`
 4. **Use PostgreSQL in production** - SQLite is for development only
 5. **Enable HTTPS** - Required for secure cookie handling
+6. **Restrict CORS origins** - Only allow your actual frontend domain
+
+---
+
+## Next Steps
+
+- [Docker Deployment](/deployment/docker) - Deploy with Docker Compose
+- [Production Deployment](/deployment/production) - HTTPS, security hardening
+- [Architecture Overview](/architecture/overview) - Understand the system

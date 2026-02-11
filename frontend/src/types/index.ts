@@ -134,3 +134,38 @@ export interface ApiError {
     details?: Record<string, unknown>;
   };
 }
+
+export type RepurposeStatus = "PENDING" | "EXTRACTING" | "TRANSCRIBING" | "GENERATING" | "COMPLETED" | "FAILED";
+export type ToneStyle = "FORMAL" | "CASUAL" | "FRIENDLY";
+export type ContentPlatform = "NAVER_BLOG" | "X_THREAD" | "INSTAGRAM" | "BRUNCH" | "NAVER_POST" | "SHORT_CLIP";
+
+export interface RepurposeJob {
+  id: number;
+  youtube_url: string;
+  video_title: string | null;
+  video_duration: number | null;
+  status: RepurposeStatus;
+  tone_style: ToneStyle;
+  target_platforms: string[];
+  transcript: string | null;
+  summary: string | null;
+  key_points: string[] | null;
+  error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RepurposeContent {
+  id: number;
+  job_id: number;
+  platform: ContentPlatform;
+  content: string;
+  content_metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface RepurposeJobCreate {
+  youtube_url: string;
+  tone_style?: ToneStyle;
+  target_platforms?: ContentPlatform[];
+}

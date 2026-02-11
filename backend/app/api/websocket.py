@@ -111,6 +111,7 @@ class ConnectionManager:
 
 
 manager = ConnectionManager()
+repurpose_manager = ConnectionManager()
 
 
 async def send_agent_log(
@@ -206,3 +207,53 @@ async def websocket_campaign_status(
                 await websocket.send_json({"type": "pong"})
     except WebSocketDisconnect:
         manager.disconnect(websocket, campaign_id)
+
+
+@router.websocket("/repurpose/{job_id}")
+async def websocket_repurpose(
+    websocket: WebSocket,
+    job_id: int,
+    token: Optional[str] = Query(default=None),
+    session: Session = Depends(get_session),
+):
+    if not token:
+        await websocket.close(code=4001, reason="Missing authentication token")
+        return
+
+    payload = verify_token(token)
+    if payload is None:
+        await websocket.close(code=4001, reason="Invalid or expired token")
+        return
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        await websocket.close(code=4001, reason="Invalid token payload")
+        return
+
+    user = session.get(User, int(user_id))
+    if user is None or not user.is_active:
+        await websocket.close(code=4001, reason="User not found or inactive")
+        return
+
+    from app.models.models import RepurposeJob
+
+    job = session.get(RepurposeJob, job_id)
+    if job is None or job.user_id != user.id:
+        await websocket.close(code=4003, reason="Access denied")
+        return
+
+    await repurpose_manager.connect(websocket, job_id)
+    try:
+        await websocket.send_json(
+            {
+                "type": "connected",
+                "job_id": job_id,
+                "message": "Connected to repurpose progress stream",
+            }
+        )
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_json({"type": "pong"})
+    except WebSocketDisconnect:
+        repurpose_manager.disconnect(websocket, job_id)

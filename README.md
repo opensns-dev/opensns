@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="docs/src/assets/logo.svg" alt="OpenSNS" width="280" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/logo-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="docs/src/assets/logo.svg" />
+    <img src="docs/src/assets/logo.svg" alt="OpenSNS" width="280" />
+  </picture>
 </p>
 
 <p align="center">
@@ -27,6 +31,7 @@
 - **✍️ Ad Copy Generation** — Platform-specific ad copy (Instagram, Facebook, Google Ads, Naver)
 - **🖼️ Image Generation** — AI-generated product images via Fal.ai or ComfyUI
 - **🎬 Video Generation** — Image-to-video conversion for TikTok and Stories
+- **🧑‍💼 UGC Video** — AI avatar videos with HeyGen, D-ID, or SadTalker
 - **📈 Performance Prediction** — AI-powered CTR and engagement predictions
 - **📱 Multi-Platform Optimization** — Automatic resizing for each platform's specs
 
@@ -40,6 +45,7 @@
 | **LLM** | OpenAI / Ollama |
 | **Image** | Fal.ai / ComfyUI |
 | **Video** | Fal.ai / Runway / ComfyUI |
+| **UGC Video** | HeyGen / D-ID / SadTalker |
 
 ## 🚀 Quick Start
 

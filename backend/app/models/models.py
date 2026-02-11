@@ -59,6 +59,7 @@ class User(UserBase, table=True):
     settings: Optional["UserSettings"] = Relationship(back_populates="user")
     subscription: Optional["Subscription"] = Relationship(back_populates="user")
     usage: Optional["UsageTracking"] = Relationship(back_populates="user")
+    repurpose_jobs: List["RepurposeJob"] = Relationship(back_populates="user")
 
 
 class UserCreate(BaseModel):
@@ -215,6 +216,7 @@ class AgentLog(SQLModel, table=True):
 CREDIT_COSTS = {
     "image": 1,
     "video": 12,
+    "repurpose": 5,
 }
 
 CREDIT_PACKS = {
@@ -368,3 +370,110 @@ class BillingOverview(BaseModel):
     usage: UsageResponse
     credit_costs: dict
     usage_percentage: int
+
+
+# ============ Content Repurposing Models ============
+
+
+class RepurposeStatus(str, Enum):
+    PENDING = "PENDING"
+    EXTRACTING = "EXTRACTING"
+    TRANSCRIBING = "TRANSCRIBING"
+    GENERATING = "GENERATING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class ToneStyle(str, Enum):
+    FORMAL = "FORMAL"  # 존댓말/전문적
+    CASUAL = "CASUAL"  # 반말/캐주얼
+    FRIENDLY = "FRIENDLY"  # 존댓말/친근
+
+
+class ContentPlatform(str, Enum):
+    NAVER_BLOG = "NAVER_BLOG"
+    X_THREAD = "X_THREAD"
+    INSTAGRAM = "INSTAGRAM"
+    BRUNCH = "BRUNCH"
+    NAVER_POST = "NAVER_POST"
+    SHORT_CLIP = "SHORT_CLIP"
+
+
+class RepurposeJob(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    youtube_url: str
+    video_title: Optional[str] = None
+    video_duration: Optional[int] = None  # seconds
+    status: RepurposeStatus = Field(default=RepurposeStatus.PENDING)
+    tone_style: ToneStyle = Field(default=ToneStyle.FRIENDLY)
+    target_platforms: str = Field(default="[]")  # JSON array of ContentPlatform values
+    transcript: Optional[str] = None
+    transcript_segments: Optional[str] = None  # JSON: [{start, end, text}]
+    summary: Optional[str] = None
+    key_points: Optional[str] = None  # JSON array of strings
+    error: Optional[str] = None
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+    user: Optional[User] = Relationship(back_populates="repurpose_jobs")
+    contents: List["RepurposeContent"] = Relationship(
+        back_populates="job",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+
+
+class RepurposeContent(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    job_id: int = Field(foreign_key="repurposejob.id")
+    platform: ContentPlatform
+    content: str
+    content_metadata: str = Field(default="{}")  # JSON: hashtags, timestamps, etc.
+    created_at: datetime = Field(default_factory=utc_now)
+
+    job: Optional[RepurposeJob] = Relationship(back_populates="contents")
+
+
+# ============ Repurpose Request/Response Schemas ============
+
+
+class RepurposeJobCreate(BaseModel):
+    youtube_url: str
+    tone_style: ToneStyle = ToneStyle.FRIENDLY
+    target_platforms: List[ContentPlatform] = [
+        ContentPlatform.NAVER_BLOG,
+        ContentPlatform.X_THREAD,
+        ContentPlatform.INSTAGRAM,
+        ContentPlatform.BRUNCH,
+        ContentPlatform.NAVER_POST,
+        ContentPlatform.SHORT_CLIP,
+    ]
+
+
+class RepurposeJobResponse(BaseModel):
+    id: int
+    youtube_url: str
+    video_title: Optional[str]
+    video_duration: Optional[int]
+    status: RepurposeStatus
+    tone_style: ToneStyle
+    target_platforms: List[str]
+    transcript: Optional[str]
+    summary: Optional[str]
+    key_points: Optional[List[str]]
+    error: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RepurposeContentResponse(BaseModel):
+    id: int
+    job_id: int
+    platform: ContentPlatform
+    content: str
+    content_metadata: dict
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

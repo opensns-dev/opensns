@@ -149,3 +149,13 @@ def use_video_credits(
 ) -> None:
     credits = count * CREDIT_COSTS["video"]
     use_credits(session, user, credits, "video", campaign_id)
+
+
+def check_repurpose_credits(session: Session, user: User, count: int = 1) -> None:
+    credits_needed = count * CREDIT_COSTS["repurpose"]
+    check_credits(session, user, credits_needed)
+
+
+def use_repurpose_credits(session: Session, user: User, count: int = 1) -> None:
+    credits = count * CREDIT_COSTS["repurpose"]
+    use_credits(session, user, credits, "repurpose")
