@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+export const dynamic = "force-static";
+
 const SITE_URL = "https://opensns.pages.dev";
 
 export default function sitemap(): MetadataRoute.Sitemap {
