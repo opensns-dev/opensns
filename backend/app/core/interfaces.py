@@ -32,3 +32,15 @@ class BaseImageAdapter(ABC):
         self, product_image: bytes, creative: AdCreative
     ) -> GenerationResult:
         pass
+
+
+class BaseProductPhotoAdapter(ABC):
+    @abstractmethod
+    async def remove_background(self, image_data: bytes) -> bytes:
+        pass
+
+    @abstractmethod
+    async def generate_product_shot(
+        self, product_image: bytes, scene_prompt: str, angle: str
+    ) -> GenerationResult:
+        pass

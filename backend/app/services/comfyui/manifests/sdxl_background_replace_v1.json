@@ -1,0 +1,148 @@
+{
+  "manifest_version": "1.0",
+  "workflow_id": "sdxl_background_replace_v1",
+  "workflow_type": "image",
+  "name": "SDXL Background Replacement",
+  "description": "Replaces the background of product images using SDXL inpainting with Segment Anything for automatic product segmentation. Creates professional product photography with custom backgrounds.",
+  "author": "OpenSNS",
+  "version": "1.0",
+  "required_nodes": [
+    {
+      "node_class": "LoadImageBase64",
+      "required": true,
+      "description": "Loads product image from base64 string",
+      "required_inputs": {
+        "image": "STRING"
+      }
+    },
+    {
+      "node_class": "SAMModelLoader",
+      "required": true,
+      "description": "Loads Segment Anything model for automatic segmentation",
+      "required_inputs": {
+        "model_name": "COMBO"
+      }
+    },
+    {
+      "node_class": "GroundingDinoSAMSegment",
+      "required": true,
+      "description": "Segments product using GroundingDINO + SAM",
+      "required_inputs": {
+        "image": "IMAGE",
+        "sam_model": "SAM_MODEL",
+        "prompt": "STRING",
+        "threshold": "FLOAT"
+      }
+    },
+    {
+      "node_class": "CheckpointLoaderSimple",
+      "required": true,
+      "description": "Loads SDXL checkpoint model",
+      "required_inputs": {
+        "ckpt_name": "COMBO"
+      }
+    },
+    {
+      "node_class": "CLIPTextEncode",
+      "required": true,
+      "description": "Encodes positive and negative prompts",
+      "required_inputs": {
+        "text": "STRING",
+        "clip": "CLIP"
+      }
+    },
+    {
+      "node_class": "InpaintModelConditioning",
+      "required": true,
+      "description": "Prepares conditioning for inpainting",
+      "required_inputs": {
+        "positive": "CONDITIONING",
+        "negative": "CONDITIONING",
+        "vae": "VAE",
+        "pixels": "IMAGE",
+        "mask": "MASK"
+      }
+    },
+    {
+      "node_class": "KSampler",
+      "required": true,
+      "description": "Runs diffusion sampling",
+      "required_inputs": {
+        "model": "MODEL",
+        "positive": "CONDITIONING",
+        "negative": "CONDITIONING",
+        "latent_image": "LATENT",
+        "seed": "INT",
+        "steps": "INT",
+        "cfg": "FLOAT",
+        "sampler_name": "COMBO",
+        "scheduler": "COMBO",
+        "denoise": "FLOAT"
+      }
+    },
+    {
+      "node_class": "VAEDecode",
+      "required": true,
+      "description": "Decodes latent to image",
+      "required_inputs": {
+        "samples": "LATENT",
+        "vae": "VAE"
+      }
+    },
+    {
+      "node_class": "ImageCompositeMasked",
+      "required": true,
+      "description": "Composites original product onto new background using mask",
+      "required_inputs": {
+        "destination": "IMAGE",
+        "source": "IMAGE",
+        "mask": "MASK"
+      }
+    },
+    {
+      "node_class": "SaveImage",
+      "required": true,
+      "description": "Saves the final image",
+      "required_inputs": {
+        "images": "IMAGE"
+      }
+    }
+  ],
+  "required_models": [
+    {
+      "logical_id": "sdxl_base_1.0",
+      "model_type": "checkpoint",
+      "required": true,
+      "alternatives": ["sdxl_base_1.0_fp16", "sd_xl_base_1.0"],
+      "description": "SDXL base checkpoint for image generation"
+    },
+    {
+      "logical_id": "sam_vit_h",
+      "model_type": "sam_model",
+      "required": true,
+      "alternatives": ["sam_vit_l", "sam_vit_b"],
+      "description": "Segment Anything model for product segmentation"
+    }
+  ],
+  "expected_outputs": [
+    {
+      "output_type": "image",
+      "source_node_class": "SaveImage",
+      "source_output_index": 0,
+      "filename_pattern": "opensns_ad*.png",
+      "is_primary": true
+    }
+  ],
+  "parameters": {
+    "default_positive_prompt": "professional product photography, clean studio background, soft lighting, high quality, detailed",
+    "default_negative_prompt": "blurry, low quality, distorted, deformed, ugly, duplicate, watermark, signature, text, logo",
+    "segmentation_prompt": "product, main object",
+    "segmentation_threshold": 0.3,
+    "sampler": "dpmpp_2m",
+    "scheduler": "karras",
+    "steps": 30,
+    "cfg": 7.5,
+    "denoise": 0.85,
+    "filename_prefix": "opensns_ad"
+  }
+}

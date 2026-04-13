@@ -9,13 +9,29 @@ from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 import httpx
 from app.db import get_session
-from app.models.models import Campaign, CampaignStatus, CampaignCreate, User, Asset
+from app.models.models import (
+    Campaign,
+    CampaignStatus,
+    CampaignCreate,
+    User,
+    Asset,
+    UserSettings,
+)
 from app.services.pipeline import run_campaign_pipeline, approve_and_resume
 from app.core.auth import get_current_user
 from app.core.rate_limit import limiter
-from app.services.usage import check_image_credits
+from app.services.usage import check_image_credits, check_tts_credits
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
+
+
+class CampaignStats(BaseModel):
+    total: int
+    completed: int
+    in_progress: int
+    failed: int
+
 
 # Security: Allowed hosts for asset URLs (SSRF prevention)
 # Add your CDN/storage domains here
@@ -40,11 +56,20 @@ def is_allowed_asset_url(url: str) -> bool:
     try:
         parsed = urlparse(url)
         hostname = parsed.hostname or ""
-        # Check exact match or subdomain match
-        return any(
+        if any(
             hostname == allowed or hostname.endswith(f".{allowed}")
             for allowed in ALLOWED_ASSET_HOSTS
-        )
+        ):
+            return True
+        from app.core.config import settings
+
+        if settings.STORAGE_PUBLIC_URL:
+            storage_host = urlparse(settings.STORAGE_PUBLIC_URL).hostname
+            if storage_host and (
+                hostname == storage_host or hostname.endswith(f".{storage_host}")
+            ):
+                return True
+        return False
     except Exception:
         return False
 
@@ -60,6 +85,11 @@ async def create_campaign(
     session: Session = Depends(get_session),
 ):
     check_image_credits(session, current_user, 3)
+
+    # Pre-flight TTS credit check: if user has TTS enabled, ensure credits exist
+    user_settings = session.get(UserSettings, current_user.id)
+    if user_settings and user_settings.tts_enabled:
+        check_tts_credits(session, current_user, 1)
 
     campaign = Campaign(
         **campaign_in.model_dump(),
@@ -107,6 +137,30 @@ async def list_campaigns(
         select(Campaign).where(Campaign.user_id == current_user.id)
     ).all()
     return campaigns
+
+
+@router.get("/stats", response_model=CampaignStats)
+async def get_campaign_stats(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    campaigns = session.exec(
+        select(Campaign).where(Campaign.user_id == current_user.id)
+    ).all()
+
+    in_progress_statuses = {
+        CampaignStatus.PENDING,
+        CampaignStatus.RESEARCHING,
+        CampaignStatus.GENERATING,
+        CampaignStatus.AWAITING_APPROVAL,
+    }
+
+    return CampaignStats(
+        total=len(campaigns),
+        completed=sum(1 for c in campaigns if c.status == CampaignStatus.COMPLETED),
+        in_progress=sum(1 for c in campaigns if c.status in in_progress_statuses),
+        failed=sum(1 for c in campaigns if c.status == CampaignStatus.FAILED),
+    )
 
 
 @router.get("/{campaign_id}", response_model=Campaign)
@@ -277,3 +331,16 @@ async def export_campaign(
             "Content-Disposition": f'attachment; filename="campaign_{campaign_id}_assets.zip"'
         },
     )
+
+
+from app.api.analytics import router as analytics_router  # noqa: E402
+
+router.include_router(analytics_router)
+
+from app.api.predictions import router as predictions_router  # noqa: E402
+
+router.include_router(predictions_router)
+
+from app.api.ad_serving import router as ad_serving_router  # noqa: E402
+
+router.include_router(ad_serving_router)

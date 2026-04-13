@@ -10,12 +10,12 @@ class OpenAIAdapter(BaseLLMAdapter):
     def __init__(
         self,
         api_key: str | None = None,
-        model: str = "gpt-4o",
-        base_url: str = "https://api.openai.com/v1",
+        model: str | None = None,
+        base_url: str | None = None,
     ):
         self.api_key = api_key or settings.OPENAI_API_KEY
-        self.model = model
-        self.base_url = base_url
+        self.model = model or settings.OPENAI_MODEL
+        self.base_url = base_url or settings.OPENAI_BASE_URL
 
     async def generate_text(self, prompt: str) -> str:
         if not self.api_key:

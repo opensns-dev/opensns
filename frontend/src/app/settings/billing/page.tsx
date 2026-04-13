@@ -11,8 +11,8 @@ import {
   useBillingOverview,
   usePlans,
   useCreditPacks,
-  usePaddleConfig,
-  usePaddleCheckout,
+  useLSConfig,
+  useLSCheckout,
 } from "@/hooks/use-billing";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
@@ -26,14 +26,24 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
-const TIER_ORDER = ["FREE", "BASIC", "PRO", "ULTRA"] as const;
+const TIER_ORDER = ["FREE", "BASIC", "BYOK", "PRO", "ULTRA"] as const;
 
 const TIER_COLORS: Record<string, string> = {
   FREE: "bg-zinc-500",
   BASIC: "bg-blue-500",
+  BYOK: "bg-emerald-500",
   PRO: "bg-amber-500",
   ULTRA: "bg-purple-500",
 };
+
+declare global {
+  interface Window {
+    createLemonSqueezy?: () => void;
+    LemonSqueezy?: {
+      Url: { Open: (url: string) => void };
+    };
+  }
+}
 
 function BillingContent() {
   const searchParams = useSearchParams();
@@ -41,8 +51,8 @@ function BillingContent() {
   const { data: overview, isLoading: overviewLoading, refetch: refetchOverview } = useBillingOverview();
   const { data: plans, isLoading: plansLoading } = usePlans();
   const { data: creditPacks, isLoading: packsLoading } = useCreditPacks();
-  const { data: paddleConfig, isLoading: paddleLoading } = usePaddleConfig();
-  const paddleCheckout = usePaddleCheckout();
+  const { data: lsConfig, isLoading: lsLoading } = useLSConfig();
+  const lsCheckout = useLSCheckout();
 
   useEffect(() => {
     if (searchParams.get("success") === "true") {
@@ -58,12 +68,12 @@ function BillingContent() {
   }, [searchParams, refetchOverview]);
 
   useEffect(() => {
-    if (paddleConfig && window.Paddle && !window.Paddle.Initialized) {
-      window.Paddle.Environment.set(paddleConfig.environment);
+    if (lsConfig) {
+      window.createLemonSqueezy?.();
     }
-  }, [paddleConfig]);
+  }, [lsConfig]);
 
-  const isLoading = overviewLoading || plansLoading || packsLoading || paddleLoading;
+  const isLoading = overviewLoading || plansLoading || packsLoading || lsLoading;
 
   if (isLoading) {
     return (
@@ -83,12 +93,12 @@ function BillingContent() {
 
   const { subscription, usage, credit_costs, usage_percentage } = overview;
   const currentTier = subscription.tier;
-  const isPaid = currentTier !== "FREE";
+  const isPaid = currentTier !== "FREE" && currentTier !== "BYOK";
   const totalAvailable = usage.credits_limit + usage.bonus_credits;
   const creditsRemaining = totalAvailable - usage.credits_used;
 
-  const handleUpgrade = (tier: string, priceId: string | null) => {
-    if (!priceId) {
+  const handleUpgrade = (variantId: string | null) => {
+    if (!variantId) {
       toast.error("Pricing not configured");
       return;
     }
@@ -96,16 +106,15 @@ function BillingContent() {
       toast.error("Please log in first");
       return;
     }
-    paddleCheckout.mutate({
-      priceId,
-      email: user.email,
+    lsCheckout.mutate({
+      variantId,
       userId: user.id,
-      type: "subscription",
+      checkoutType: "subscription",
     });
   };
 
-  const handleTopup = (packId: string, priceId: string | null, credits: number) => {
-    if (!priceId) {
+  const handleTopup = (variantId: string | null, credits: number) => {
+    if (!variantId) {
       toast.error("Pricing not configured");
       return;
     }
@@ -113,11 +122,10 @@ function BillingContent() {
       toast.error("Please log in first");
       return;
     }
-    paddleCheckout.mutate({
-      priceId,
-      email: user.email,
+    lsCheckout.mutate({
+      variantId,
       userId: user.id,
-      type: "credit_topup",
+      checkoutType: "credit_topup",
       credits,
     });
   };
@@ -125,10 +133,11 @@ function BillingContent() {
   return (
     <>
       <Script
-        src="https://cdn.paddle.com/paddle/v2/paddle.js"
-        strategy="lazyOnload"
+        src="https://app.lemonsqueezy.com/js/lemon.js"
+        defer
+        onLoad={() => window.createLemonSqueezy?.()}
       />
-      <div className="container max-w-4xl py-8 space-y-6">
+      <div className="container max-w-6xl py-8 space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Billing & Subscription</h1>
           <p className="text-zinc-600 dark:text-zinc-400">
@@ -156,7 +165,9 @@ function BillingContent() {
                       `Renews on ${subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : "N/A"}`
                     )
                   ) : (
-                    "Upgrade to get more credits"
+                    currentTier === "BYOK"
+                      ? "Use your own API keys for unlimited usage"
+                      : "Upgrade to get more credits"
                   )}
                 </CardDescription>
               </div>
@@ -166,7 +177,7 @@ function BillingContent() {
                   asChild
                 >
                   <a
-                    href="https://customer.paddle.com/"
+                    href="https://app.lemonsqueezy.com/my-orders"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -239,18 +250,21 @@ function BillingContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
               {TIER_ORDER.map((tier) => {
                 const plan = plans[tier];
                 if (!plan) return null;
 
                 const isCurrent = tier === currentTier;
+                const isByok = tier === "BYOK";
                 const tierIndex = TIER_ORDER.indexOf(tier);
                 const currentIndex = TIER_ORDER.indexOf(currentTier);
                 const canUpgrade = tierIndex > currentIndex;
-                const pricePerCredit = plan.price_monthly > 0 
+                const pricePerCredit = !isByok && plan.price_monthly > 0 && plan.credits_per_month > 0
                   ? (plan.price_monthly / 100 / plan.credits_per_month).toFixed(3)
-                  : "Free";
+                  : isByok
+                    ? "No markup on AI usage"
+                    : "Free";
 
                 return (
                   <div
@@ -277,11 +291,21 @@ function BillingContent() {
                       <ul className="space-y-2 text-sm">
                         <li className="flex items-center gap-2">
                           <Check className="h-4 w-4 text-green-500" />
-                          {plan.credits_per_month} credits/mo
+                          {isByok ? "Unlimited" : `${plan.credits_per_month} credits/mo`}
                         </li>
                         <li className="text-xs text-zinc-500">
-                          {pricePerCredit !== "Free" ? `$${pricePerCredit}/credit` : "Free"}
+                          {pricePerCredit === "Free"
+                            ? "Free"
+                            : pricePerCredit === "No markup on AI usage"
+                              ? pricePerCredit
+                              : `$${pricePerCredit}/credit`}
                         </li>
+                        {isByok && (
+                          <li className="flex items-center gap-2 rounded-md bg-emerald-50 px-2 py-1 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+                            <Check className="h-4 w-4 text-emerald-500" />
+                            <span className="font-medium">Bring Your Own API Keys</span>
+                          </li>
+                        )}
                         <li className="flex items-center gap-2">
                           {plan.api_access ? (
                             <>
@@ -297,17 +321,17 @@ function BillingContent() {
                         </li>
                       </ul>
 
-                      {canUpgrade && plan.paddle_price_id && (
+                      {canUpgrade && plan.variant_id && (
                         <Button
                           className="w-full"
-                          onClick={() => handleUpgrade(tier, plan.paddle_price_id)}
-                          disabled={paddleCheckout.isPending}
+                          onClick={() => handleUpgrade(plan.variant_id)}
+                          disabled={lsCheckout.isPending}
                         >
                           <Zap className="h-4 w-4 mr-2" />
-                          {paddleCheckout.isPending ? "Loading..." : "Upgrade"}
+                          {lsCheckout.isPending ? "Loading..." : "Upgrade"}
                         </Button>
                       )}
-                      {canUpgrade && !plan.paddle_price_id && tier !== "FREE" && (
+                      {canUpgrade && !plan.variant_id && tier !== "FREE" && (
                         <Button className="w-full" disabled>
                           Coming Soon
                         </Button>
@@ -347,15 +371,15 @@ function BillingContent() {
                         ${(pack.price_cents / 100 / pack.credits).toFixed(3)}/credit
                       </p>
                     </div>
-                    {pack.paddle_price_id ? (
+                    {pack.variant_id ? (
                       <Button
                         className="w-full"
                         variant="outline"
-                        onClick={() => handleTopup(packId, pack.paddle_price_id, pack.credits)}
-                        disabled={paddleCheckout.isPending}
+                        onClick={() => handleTopup(pack.variant_id, pack.credits)}
+                        disabled={lsCheckout.isPending}
                       >
                         <Zap className="h-4 w-4 mr-2" />
-                        {paddleCheckout.isPending ? "Loading..." : "Buy Now"}
+                        {lsCheckout.isPending ? "Loading..." : "Buy Now"}
                       </Button>
                     ) : (
                       <Button className="w-full" variant="outline" disabled>

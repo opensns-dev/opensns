@@ -1,3 +1,5 @@
+from typing import Callable, Awaitable
+
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from app.services.agents.state import AgentState
@@ -9,6 +11,9 @@ from app.services.agents.nodes import (
     image_generation_node,
     video_generation_node,
     ugc_video_generation_node,
+    tts_generation_node,
+    bgm_generation_node,
+    audio_mixing_node,
     platform_optimizer_node,
     performance_predictor_node,
     verification_node,
@@ -29,6 +34,9 @@ def build_marketing_graph() -> StateGraph:
     workflow.add_node("image_generation", image_generation_node)
     workflow.add_node("video_generation", video_generation_node)
     workflow.add_node("ugc_video_generation", ugc_video_generation_node)
+    workflow.add_node("tts_generation", tts_generation_node)
+    workflow.add_node("bgm_generation", bgm_generation_node)
+    workflow.add_node("audio_mixing", audio_mixing_node)
     workflow.add_node("merge_branches", merge_parallel_branches)
     workflow.add_node("platform_optimizer", platform_optimizer_node)
     workflow.add_node("performance_predictor", performance_predictor_node)
@@ -61,10 +69,13 @@ def build_marketing_graph() -> StateGraph:
         },
     )
 
-    workflow.add_edge("copy_generation", "ugc_video_generation")
-    workflow.add_edge("ugc_video_generation", "merge_branches")
+    workflow.add_edge("copy_generation", "tts_generation")
+    workflow.add_edge("tts_generation", "ugc_video_generation")
+    workflow.add_edge("ugc_video_generation", "audio_mixing")
     workflow.add_edge("image_generation", "video_generation")
-    workflow.add_edge("video_generation", "merge_branches")
+    workflow.add_edge("video_generation", "bgm_generation")
+    workflow.add_edge("bgm_generation", "audio_mixing")
+    workflow.add_edge("audio_mixing", "merge_branches")
     # ...
 
     workflow.add_edge("merge_branches", "platform_optimizer")
@@ -95,6 +106,8 @@ async def run_marketing_workflow(
     product_url: str,
     user_config: dict,
     requires_approval: bool = False,
+    brand_kit: dict | None = None,
+    on_step_change: Callable[[str], Awaitable[None]] | None = None,
 ) -> AgentState:
     initial_state: AgentState = {
         "campaign_id": campaign_id,
@@ -115,6 +128,15 @@ async def run_marketing_workflow(
         "ugc_enabled": user_config.get("ugc_enabled", False),
         "ugc_avatar_id": user_config.get("ugc_avatar_id"),
         "ugc_voice_id": user_config.get("ugc_voice_id"),
+        # Audio configuration
+        "elevenlabs_api_key": user_config.get("elevenlabs_api_key"),
+        "default_tts_engine": user_config.get("default_tts_engine"),
+        "default_bgm_engine": user_config.get("default_bgm_engine"),
+        "tts_voice_id": user_config.get("tts_voice_id"),
+        "bgm_style": user_config.get("bgm_style"),
+        "tts_enabled": user_config.get("tts_enabled", False),
+        "bgm_enabled": user_config.get("bgm_enabled", False),
+        "brand_kit": brand_kit,
         "research_data": None,
         "competitor_insights": [],
         "angles": [],
@@ -122,6 +144,11 @@ async def run_marketing_workflow(
         "generated_images": [],
         "generated_videos": [],
         "generated_ugc_videos": [],
+        # Audio pipeline outputs
+        "generated_tts": [],
+        "generated_bgm": [],
+        "mixed_videos": [],
+        "mixed_ugc_videos": [],
         "optimized_assets": [],
         "performance_predictions": [],
         "verification_results": [],
@@ -129,17 +156,30 @@ async def run_marketing_workflow(
         "failed_items": [],
         "current_step": "research",
         "retry_count": 0,
-        "max_retries": 3,
+        "max_retries": 2,
         "error": None,
         "is_complete": False,
         "copy_done": False,
         "visual_done": False,
         "ugc_done": False,
+        "tts_done": False,
+        "bgm_done": False,
+        "audio_mixed": False,
         "requires_approval": requires_approval,
         "is_approved": not requires_approval,
     }
 
     config = {"configurable": {"thread_id": str(campaign_id)}}
+
+    if on_step_change:
+        async for event in marketing_graph.astream(initial_state, config=config):
+            for node_name, node_output in event.items():
+                if isinstance(node_output, dict):
+                    step = node_output.get("current_step")
+                    if step:
+                        await on_step_change(step)
+        return marketing_graph.get_state(config).values
+
     final_state = await marketing_graph.ainvoke(initial_state, config=config)
     return final_state
 

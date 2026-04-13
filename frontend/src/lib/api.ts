@@ -15,7 +15,13 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && typeof window !== "undefined") {
       const path = window.location.pathname;
-      const publicPrefixes = ["/login", "/register", "/auth/", "/onboarding", "/pricing", "/terms", "/privacy", "/refund", "/contact"];
+      const requestUrl = String(error.config?.url || "");
+      const publicPrefixes = ["/login", "/register", "/forgot-password", "/auth/", "/onboarding", "/pricing", "/terms", "/privacy", "/refund", "/contact"];
+
+      if (requestUrl.includes("/auth/me")) {
+        return Promise.reject(error);
+      }
+
       if (
         path !== "/" &&
         !publicPrefixes.some((prefix) => path.startsWith(prefix))

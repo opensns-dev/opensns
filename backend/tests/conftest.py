@@ -2,6 +2,11 @@
 Pytest fixtures for OpenSNS backend tests.
 """
 
+import os
+
+# Disable rate limiter during tests (must be set before app import)
+os.environ["TESTING"] = "1"
+
 import pytest
 from typing import Generator
 from fastapi.testclient import TestClient
@@ -10,7 +15,7 @@ from sqlmodel.pool import StaticPool
 
 from app.main import app
 from app.db import get_session
-from app.models.models import User, UserSettings
+from app.models.models import User, UserSettings, Subscription, PlanTier
 from app.core.auth import get_password_hash, create_access_token
 
 
@@ -60,7 +65,6 @@ def test_user_fixture(session: Session) -> User:
     session.commit()
     session.refresh(user)
 
-    # Create user settings
     settings = UserSettings(user_id=user.id)
     session.add(settings)
     session.commit()
@@ -81,3 +85,33 @@ def authenticated_client_fixture(
 ) -> tuple[TestClient, dict]:
     """Return client with auth headers for convenience."""
     return client, auth_headers
+
+
+@pytest.fixture(name="byok_user")
+def byok_user_fixture(session: Session) -> User:
+    user = User(
+        email="byok@example.com",
+        hashed_password=get_password_hash("testpassword123"),
+        is_active=True,
+        is_verified=True,
+        auth_provider="email",
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    settings = UserSettings(user_id=user.id)
+    session.add(settings)
+    session.commit()
+
+    subscription = Subscription(user_id=user.id, tier=PlanTier.BYOK)
+    session.add(subscription)
+    session.commit()
+
+    return user
+
+
+@pytest.fixture(name="byok_headers")
+def byok_headers_fixture(byok_user: User) -> dict:
+    token = create_access_token(data={"sub": str(byok_user.id)})
+    return {"Authorization": f"Bearer {token}"}

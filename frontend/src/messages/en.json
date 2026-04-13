@@ -1,0 +1,110 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "create": "Create",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "search": "Search",
+    "noResults": "No results found",
+    "back": "Back",
+    "next": "Next",
+    "processing": "Processing..."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "campaigns": "Campaigns",
+    "assets": "Assets",
+    "logs": "Logs",
+    "repurpose": "Repurpose",
+    "settings": "Settings",
+    "billing": "Billing",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalCampaigns": "Total Campaigns",
+    "totalAssets": "Total Assets",
+    "creditsRemaining": "Credits Remaining",
+    "recentCampaigns": "Recent Campaigns"
+  },
+  "campaigns": {
+    "title": "Campaigns",
+    "create": "Create Campaign",
+    "productUrl": "Product URL",
+    "status": "Status",
+    "createdAt": "Created At",
+    "noCampaigns": "No campaigns yet",
+    "detail": "Campaign Detail"
+  },
+  "templates": {
+    "title": "Templates",
+    "filter": "Filter",
+    "industry": "Industry",
+    "platform": "Platform",
+    "all": "All"
+  },
+  "brandKits": {
+    "title": "Brand Kits",
+    "create": "Create Brand Kit",
+    "name": "Name",
+    "noBrandKits": "No brand kits yet"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "apiKeys": "API Keys",
+    "engines": "Engines",
+    "language": "Language"
+  },
+  "repurpose": {
+    "title": "Content Repurpose",
+    "subtitle": "Automatically transform YouTube videos into multi-platform content",
+    "newRepurpose": "New Repurpose",
+    "youtubeUrl": "YouTube URL",
+    "toneAndManner": "Tone & Manner",
+    "outputPlatforms": "Output Platforms",
+    "startRepurpose": "Start Repurpose",
+    "previousJobs": "Previous Jobs",
+    "noJobs": "No repurpose jobs yet",
+    "platforms": {
+      "naverBlog": "Naver Blog",
+      "xThread": "X Thread",
+      "instagram": "Instagram",
+      "brunch": "Brunch Story",
+      "naverPost": "Naver Post",
+      "shortClip": "Short Clip"
+    },
+    "tones": {
+      "friendly": "Polite / Friendly",
+      "formal": "Polite / Professional",
+      "casual": "Casual"
+    },
+    "status": {
+      "pending": "Pending",
+      "extracting": "Extracting Audio",
+      "transcribing": "Transcribing",
+      "generating": "Generating Content",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "toast": {
+      "startSuccess": "Repurpose started",
+      "startSuccessDesc": "Content generation has started.",
+      "startError": "Repurpose failed",
+      "startErrorDesc": "Please check the YouTube URL.",
+      "deleteSuccess": "Deleted",
+      "deleteError": "Delete failed"
+    }
+  },
+  "language": {
+    "en": "English",
+    "ko": "한국어",
+    "switchTo": "Language"
+  }
+}

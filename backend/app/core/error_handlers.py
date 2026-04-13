@@ -185,6 +185,9 @@ def register_error_handlers(app):
     app.add_exception_handler(OpenSNSError, opensns_exception_handler)
     app.add_exception_handler(IntegrityError, integrity_error_handler)
     app.add_exception_handler(PydanticValidationError, pydantic_validation_handler)
-    # Note: Generic Exception handler should be optional in dev for stack traces
-    # Uncomment for production:
-    # app.add_exception_handler(Exception, generic_exception_handler)
+    # Generic exception handler: catches unhandled errors in production
+    # Disabled in DEBUG mode to preserve stack traces for development
+    from app.core.config import settings
+
+    if not settings.DEBUG:
+        app.add_exception_handler(Exception, generic_exception_handler)

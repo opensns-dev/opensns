@@ -83,26 +83,13 @@ class TestWebSocketAuthentication:
             ):
                 pass
 
-    def test_websocket_allows_own_campaign(self, client, session):
-        from app.models.models import User, Campaign, UserSettings
-        from app.core.auth import get_password_hash, create_access_token
-
-        user = User(
-            email="owner@example.com",
-            hashed_password=get_password_hash("password123"),
-            is_active=True,
-            is_verified=True,
-            auth_provider="email",
-        )
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-
-        user_settings = UserSettings(user_id=user.id)
-        session.add(user_settings)
+    def test_websocket_allows_own_campaign(
+        self, client, test_user, auth_headers, session
+    ):
+        from app.models.models import Campaign
 
         campaign = Campaign(
-            user_id=user.id,
+            user_id=test_user.id,
             title="Owner's Campaign",
             product_url="https://example.com",
         )
@@ -110,7 +97,7 @@ class TestWebSocketAuthentication:
         session.commit()
         session.refresh(campaign)
 
-        token = create_access_token(data={"sub": str(user.id)})
+        token = auth_headers["Authorization"].replace("Bearer ", "")
 
         with client.websocket_connect(
             f"/ws/logs/{campaign.id}?token={token}"

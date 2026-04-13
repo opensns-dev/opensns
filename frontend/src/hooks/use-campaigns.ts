@@ -11,6 +11,7 @@ export function useCampaigns() {
       const response = await api.get<Campaign[]>("/campaigns");
       return response.data;
     },
+    staleTime: 30000,
   });
 }
 

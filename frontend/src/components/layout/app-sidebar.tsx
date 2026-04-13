@@ -9,7 +9,6 @@ import {
   Images,
   ScrollText,
   Settings,
-  CreditCard,
   LogOut,
   Repeat,
 } from "lucide-react";
@@ -56,11 +55,6 @@ const items = [
     title: "Settings",
     url: "/settings/",
     icon: Settings,
-  },
-  {
-    title: "Billing",
-    url: "/settings/billing/",
-    icon: CreditCard,
   },
 ];
 

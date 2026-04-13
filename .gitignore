@@ -70,6 +70,7 @@ backend/opensns.db
 backend/venv/
 frontend/.next/
 frontend/out/
+frontend/public/docs/
 
 # Sisyphus working files
 .sisyphus/

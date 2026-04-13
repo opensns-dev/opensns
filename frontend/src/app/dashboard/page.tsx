@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { 
   Megaphone, 
   CheckCircle, 
@@ -53,7 +54,7 @@ function formatRelativeTime(dateString: string): string {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { data: campaigns, isLoading } = useCampaigns();
+  const { data: campaigns, isLoading, error, refetch } = useCampaigns();
   const createCampaign = useCreateCampaign();
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -61,6 +62,14 @@ export default function DashboardPage() {
 
   const handleCreate = async () => {
     if (!title.trim() || !productUrl.trim()) return;
+    try {
+      new URL(productUrl.trim());
+    } catch {
+      toast.error("Invalid URL", {
+        description: "Please enter a valid product URL (e.g., https://example.com/product)",
+      });
+      return;
+    }
     try {
       const campaign = await createCampaign.mutateAsync({
         title,
@@ -73,19 +82,35 @@ export default function DashboardPage() {
         description: "Your campaign is now being processed.",
       });
       router.push(`/campaigns/view?id=${campaign.id}`);
-    } catch {
-      toast.error("Failed to create campaign");
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 402) {
+        toast.error("Insufficient credits", {
+          description: "You need more credits to create a campaign.",
+          action: {
+            label: "Upgrade Plan",
+            onClick: () => router.push("/settings/billing/"),
+          },
+        });
+      } else {
+        toast.error("Failed to create campaign", {
+          description: "Please try again later.",
+        });
+      }
     }
   };
 
-  const stats = campaigns ? {
+  const stats = useMemo(() => campaigns ? {
     total: campaigns.length,
     completed: campaigns.filter(c => c.status === "COMPLETED").length,
     inProgress: campaigns.filter(c => ["PENDING", "RESEARCHING", "GENERATING", "AWAITING_APPROVAL"].includes(c.status)).length,
     failed: campaigns.filter(c => c.status === "FAILED").length,
-  } : { total: 0, completed: 0, inProgress: 0, failed: 0 };
+  } : { total: 0, completed: 0, inProgress: 0, failed: 0 }, [campaigns]);
 
-  const recentCampaigns = campaigns?.slice(0, 5) || [];
+  const recentCampaigns = campaigns
+    ? [...campaigns].sort((a, b) =>
+        new Date(b.updated_at ?? b.created_at).getTime() - new Date(a.updated_at ?? a.created_at).getTime()
+      ).slice(0, 5)
+    : [];
 
   const statCards = [
     {
@@ -166,6 +191,21 @@ export default function DashboardPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 p-12 text-center">
+        <AlertCircle className="h-12 w-12 text-red-500" />
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold">Failed to load dashboard</h2>
+          <p className="text-muted-foreground">Something went wrong while fetching your data.</p>
+        </div>
+        <Button variant="outline" onClick={() => refetch()}>
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
@@ -173,7 +213,13 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Overview of your marketing campaigns</p>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) {
+            setTitle("");
+            setProductUrl("");
+          }
+        }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" /> New Campaign
@@ -186,34 +232,36 @@ export default function DashboardPage() {
                 Enter the product URL to analyze and generate marketing assets.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="dash-title">Campaign Title</Label>
-                <Input
-                  id="dash-title"
-                  placeholder="Summer Collection 2024"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
+            <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dash-title">Campaign Title</Label>
+                  <Input
+                    id="dash-title"
+                    placeholder="Summer Collection 2024"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dash-url">Product URL</Label>
+                  <Input
+                    id="dash-url"
+                    placeholder="https://example.com/product"
+                    value={productUrl}
+                    onChange={(e) => setProductUrl(e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="dash-url">Product URL</Label>
-                <Input
-                  id="dash-url"
-                  placeholder="https://example.com/product"
-                  value={productUrl}
-                  onChange={(e) => setProductUrl(e.target.value)}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                onClick={handleCreate}
-                disabled={createCampaign.isPending || !title.trim() || !productUrl.trim()}
-              >
-                {createCampaign.isPending ? "Creating..." : "Start Analysis"}
-              </Button>
-            </DialogFooter>
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  disabled={createCampaign.isPending || !title.trim() || !productUrl.trim()}
+                >
+                  {createCampaign.isPending ? "Creating..." : "Start Analysis"}
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -292,7 +340,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <span className="text-xs text-muted-foreground ml-4 shrink-0">
-                      {formatRelativeTime(campaign.created_at)}
+                      {formatRelativeTime(campaign.updated_at ?? campaign.created_at)}
                     </span>
                   </Link>
                 ))}

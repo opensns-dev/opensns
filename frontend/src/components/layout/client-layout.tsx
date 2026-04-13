@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useAuth } from "@/contexts/auth-context";
+import { ComingSoon } from "@/components/coming-soon";
 
-const PUBLIC_ROUTES = ["/", "/login", "/register", "/onboarding", "/auth/verify", "/auth/google/callback", "/pricing", "/terms", "/privacy", "/refund", "/contact"];
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/onboarding", "/auth/verify", "/auth/google/callback", "/pricing", "/terms", "/privacy", "/refund", "/contact"];
 
 function isPublicPath(pathname: string): boolean {
   const normalized = pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
@@ -18,16 +18,9 @@ function isPublicPath(pathname: string): boolean {
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   
   const isPublicRoute = isPublicPath(pathname);
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated && !isPublicRoute) {
-      router.replace("/login/");
-    }
-  }, [isLoading, isAuthenticated, isPublicRoute, router]);
 
   if (isPublicRoute) {
     return (
@@ -49,7 +42,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return <ComingSoon />;
   }
 
   return (

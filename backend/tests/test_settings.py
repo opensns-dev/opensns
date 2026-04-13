@@ -63,12 +63,12 @@ class TestUpdateSettings:
         assert data["comfyui_url"] == "http://localhost:8188"
 
     def test_update_api_key_encrypted(
-        self, client: TestClient, auth_headers: dict, session: Session, test_user: User
+        self, client: TestClient, byok_headers: dict, session: Session, byok_user: User
     ):
         """Test that API keys are stored encrypted."""
         response = client.put(
             "/settings/",
-            headers=auth_headers,
+            headers=byok_headers,
             json={"openai_api_key": "sk-test-key-12345"},
         )
         assert response.status_code == 200
@@ -76,15 +76,15 @@ class TestUpdateSettings:
         assert data["has_openai_key"] is True
 
         # Verify key is encrypted in database
-        user_settings = session.get(UserSettings, test_user.id)
+        user_settings = session.get(UserSettings, byok_user.id)
         assert user_settings.openai_api_key != "sk-test-key-12345"
         assert user_settings.openai_api_key is not None
 
-    def test_update_fal_api_key(self, client: TestClient, auth_headers: dict):
+    def test_update_fal_api_key(self, client: TestClient, byok_headers: dict):
         """Test updating Fal.ai API key."""
         response = client.put(
             "/settings/",
-            headers=auth_headers,
+            headers=byok_headers,
             json={"fal_api_key": "fal-test-key-67890"},
         )
         assert response.status_code == 200

@@ -174,9 +174,17 @@ const AssetGrid = ({ type, assets }: { type: Asset["type"]; assets: Asset[] }) =
           return (
             <Card key={asset.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300">
               <div className="aspect-video relative bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center overflow-hidden">
-                <video src={asset.content} className="h-full w-full object-cover" />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="flex items-center gap-2">
+                <video
+                  src={asset.content}
+                  className="h-full w-full object-cover"
+                  controls
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                  <div className="flex items-center gap-2 pointer-events-auto">
                     <Button 
                       variant="secondary" 
                       size="sm"
@@ -184,9 +192,6 @@ const AssetGrid = ({ type, assets }: { type: Asset["type"]; assets: Asset[] }) =
                     >
                       <Download className="mr-2 h-4 w-4" /> Download
                     </Button>
-                    <div className="h-14 w-14 rounded-full bg-white/90 flex items-center justify-center shadow-xl cursor-pointer hover:scale-110 transition-transform">
-                      <Play className="h-7 w-7 text-black fill-black" />
-                    </div>
                   </div>
                 </div>
                 {meta.duration && (

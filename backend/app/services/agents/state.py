@@ -3,6 +3,10 @@ import operator
 from pydantic import BaseModel
 
 
+def _last_value(existing, new):
+    return new
+
+
 class MarketingAngle(BaseModel):
     angle_title: str
     description: str
@@ -20,6 +24,12 @@ class GeneratedAsset(BaseModel):
     asset_type: Literal["copy", "image", "video"]
     content: str
     platform: str
+    metadata: dict = {}
+
+
+class GeneratedAudioAsset(BaseModel):
+    asset_type: Literal["tts", "bgm"]
+    content: str  # URL or file path
     metadata: dict = {}
 
 
@@ -70,6 +80,17 @@ class AgentState(TypedDict):
     ugc_avatar_id: Optional[str]
     ugc_voice_id: Optional[str]
 
+    # Audio configuration
+    elevenlabs_api_key: Optional[str]
+    default_tts_engine: Optional[str]
+    default_bgm_engine: Optional[str]
+    tts_voice_id: Optional[str]
+    bgm_style: Optional[str]
+    tts_enabled: bool
+    bgm_enabled: bool
+
+    brand_kit: Optional[dict]
+
     research_data: Optional[dict]
 
     competitor_insights: Annotated[List[CompetitorInsight], operator.add]
@@ -81,21 +102,30 @@ class AgentState(TypedDict):
     generated_ugc_videos: Annotated[List[GeneratedAsset], operator.add]
     optimized_assets: Annotated[List[GeneratedAsset], operator.add]
 
+    # Audio pipeline outputs
+    generated_tts: Annotated[List[GeneratedAudioAsset], operator.add]
+    generated_bgm: Annotated[List[GeneratedAudioAsset], operator.add]
+    mixed_videos: Annotated[List[GeneratedAsset], operator.add]
+    mixed_ugc_videos: Annotated[List[GeneratedAsset], operator.add]
+
     performance_predictions: Annotated[List[PerformancePrediction], operator.add]
 
     verification_results: Annotated[List[VerificationResult], operator.add]
     verification_feedback: Optional[str]
     failed_items: Annotated[List[str], operator.add]
 
-    current_step: str
-    retry_count: int
-    max_retries: int
-    error: Optional[str]
-    is_complete: bool
+    current_step: Annotated[str, _last_value]
+    retry_count: Annotated[int, _last_value]
+    max_retries: Annotated[int, _last_value]
+    error: Annotated[Optional[str], _last_value]
+    is_complete: Annotated[bool, _last_value]
 
-    copy_done: bool
-    visual_done: bool
-    ugc_done: bool
+    copy_done: Annotated[bool, _last_value]
+    visual_done: Annotated[bool, _last_value]
+    ugc_done: Annotated[bool, _last_value]
+    tts_done: Annotated[bool, _last_value]
+    bgm_done: Annotated[bool, _last_value]
+    audio_mixed: Annotated[bool, _last_value]
 
-    requires_approval: bool
-    is_approved: bool
+    requires_approval: Annotated[bool, _last_value]
+    is_approved: Annotated[bool, _last_value]

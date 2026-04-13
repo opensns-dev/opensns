@@ -124,6 +124,6 @@ shadcn/ui primitives in `components/ui/`:
 
 ```bash
 bun test            # Vitest unit tests
-bun e2e             # Playwright E2E
+bun e2e             # agent-browser E2E
 ```
 Tests in `__tests__/` directory. Setup in `__tests__/setup.ts`.

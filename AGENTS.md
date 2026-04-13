@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-02-03
-**Commit:** 47eec20
+**Generated:** 2026-04-07
+**Commit:** 53ef689
 **Branch:** main
 
 ## OVERVIEW
@@ -12,23 +12,28 @@ OpenSNS is an open-source AI marketing agent platform that generates ad creative
 
 ```
 opensns/
-├── backend/           # FastAPI + SQLModel + LangGraph
-│   ├── app/           # Main application code
-│   │   ├── api/       # FastAPI routers
-│   │   ├── core/      # Config, auth, interfaces, registry
-│   │   ├── models/    # SQLModel database models
-│   │   └── services/  # Business logic, adapters, agents
-│   └── tests/         # pytest tests
-├── frontend/          # Next.js 15 App Router + shadcn/ui
+├── AGENTS.md                    # This file - root knowledge base
+├── backend/                     # FastAPI + SQLModel + LangGraph
+│   └── app/
+│       ├── AGENTS.md            # Backend app overview
+│       ├── api/
+│       │   └── AGENTS.md        # API routes layer
+│       ├── core/
+│       │   └── AGENTS.md        # Infrastructure (auth, registry, config)
+│       ├── services/
+│       │   ├── agents/
+│       │   │   └── AGENTS.md    # LangGraph workflow
+│       │   └── video/
+│       │       └── AGENTS.md    # Video/UGC adapters
+│       └── ...
+├── frontend/                    # Next.js 15 App Router
 │   └── src/
-│       ├── app/       # App Router pages
-│       ├── components/# UI components (shadcn)
-│       ├── hooks/     # React Query data hooks
-│       ├── contexts/  # Auth context
-│       ├── lib/       # API client, utils
-│       └── types/     # TypeScript interfaces
-├── docs/              # Astro Starlight documentation
-└── docker-compose.yml
+│       ├── AGENTS.md            # Frontend overview
+│       ├── hooks/
+│       │   └── AGENTS.md        # React Query data layer
+│       └── components/ui/
+│           └── AGENTS.md        # shadcn/ui components
+└── docs/                        # Astro Starlight
 ```
 
 ## WHERE TO LOOK
@@ -120,7 +125,7 @@ cd backend && ruff check app/                     # Lint
 # Frontend
 cd frontend && bun dev                            # Dev server (port 3000)
 cd frontend && bun test                           # Vitest unit tests
-cd frontend && bun e2e                            # Playwright E2E
+cd frontend && bun e2e                            # agent-browser E2E tests
 cd frontend && bun lint                           # ESLint
 
 # Docker
@@ -154,3 +159,7 @@ Credits only charged for real generations (fallback assets are free).
 - WebSocket endpoint at `/ws/campaigns/{id}/logs` for real-time agent logs
 - Approval workflow: set `requires_approval=True` to pause before generation
 - Video generation only processes first image per angle (intentional)
+
+## BROWSER AUTOMATION
+
+**브라우저 작업은 반드시 `agent-browser` CLI만 사용. Playwright MCP(skill_mcp playwright) 사용 금지.**

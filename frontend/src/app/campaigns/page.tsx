@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Trash2, Megaphone, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ export default function CampaignsPage() {
   const { data: campaigns, isLoading, error } = useCampaigns();
   const createCampaign = useCreateCampaign();
   const deleteCampaign = useDeleteCampaign();
+  const router = useRouter();
 
   const totalItems = campaigns?.length ?? 0;
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -58,9 +60,9 @@ export default function CampaignsPage() {
     if (!title.trim() || !productUrl.trim()) return;
 
     try {
-      await createCampaign.mutateAsync({ 
+      const data = await createCampaign.mutateAsync({
         title: title,
-        product_url: productUrl 
+        product_url: productUrl
       });
       setTitle("");
       setProductUrl("");
@@ -68,6 +70,7 @@ export default function CampaignsPage() {
       toast.success("Campaign created", {
         description: "Your campaign is now being processed.",
       });
+      router.push(`/campaigns/view?id=${data.id}`);
     } catch (err) {
       console.error("Failed to create campaign:", err);
       toast.error("Failed to create campaign", {

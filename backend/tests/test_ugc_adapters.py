@@ -311,6 +311,7 @@ class TestSadTalkerAdapter:
             script="Hello from SadTalker.",
             avatar_id="avatar1.jpg",
             voice_id="edge-tts-en",
+            background_image_url="http://example.com/avatar1.jpg",
         )
 
         generate_response = MagicMock()

@@ -12,6 +12,7 @@ class VideoGenerationRequest(BaseModel):
     aspect_ratio: str = "9:16"
     transitions: str = "fade"
     music_style: str | None = None
+    prompt: str | None = None
 
 
 class UGCVideoRequest(BaseModel):

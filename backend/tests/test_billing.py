@@ -36,30 +36,38 @@ class TestCreditCosts:
     def test_video_credit_cost(self):
         assert CREDIT_COSTS["video"] == 12
 
+    def test_product_photo_credit_cost(self):
+        assert CREDIT_COSTS["product_photo"] == 3
+
 
 class TestPlanCredits:
     def test_free_tier_credits(self):
         limits = PLAN_LIMITS[PlanTier.FREE]
-        assert limits["credits_per_month"] == 20
+        assert limits["credits_per_month"] == 50
 
     def test_basic_tier_credits(self):
         limits = PLAN_LIMITS[PlanTier.BASIC]
-        assert limits["credits_per_month"] == 145
+        assert limits["credits_per_month"] == 150
 
     def test_pro_tier_credits(self):
         limits = PLAN_LIMITS[PlanTier.PRO]
-        assert limits["credits_per_month"] == 545
+        assert limits["credits_per_month"] == 500
 
     def test_ultra_tier_credits(self):
         limits = PLAN_LIMITS[PlanTier.ULTRA]
-        assert limits["credits_per_month"] == 1980
+        assert limits["credits_per_month"] == 1200
 
 
 class TestCreditPricing:
+    def test_byok_tier_unlimited_credits(self):
+        limits = PLAN_LIMITS[PlanTier.BYOK]
+        assert limits["credits_per_month"] == -1
+        assert limits["byok"] is True
+
     def test_higher_tiers_better_value(self):
-        basic_per_credit = 899 / PLAN_LIMITS[PlanTier.BASIC]["credits_per_month"]
-        pro_per_credit = 2899 / PLAN_LIMITS[PlanTier.PRO]["credits_per_month"]
-        ultra_per_credit = 9899 / PLAN_LIMITS[PlanTier.ULTRA]["credits_per_month"]
+        basic_per_credit = 900 / PLAN_LIMITS[PlanTier.BASIC]["credits_per_month"]
+        pro_per_credit = 2900 / PLAN_LIMITS[PlanTier.PRO]["credits_per_month"]
+        ultra_per_credit = 5900 / PLAN_LIMITS[PlanTier.ULTRA]["credits_per_month"]
 
         assert pro_per_credit < basic_per_credit
         assert ultra_per_credit < pro_per_credit
@@ -124,7 +132,7 @@ class TestCreditChecks:
     def test_check_credits_fails_when_exceeded(self, session: Session, test_user: User):
         get_or_create_subscription(session, test_user)
         usage = get_or_create_usage(session, test_user)
-        usage.credits_used = 18
+        usage.credits_used = 48
         session.add(usage)
         session.commit()
 
@@ -138,7 +146,7 @@ class TestCreditChecks:
     ):
         get_or_create_subscription(session, test_user)
         usage = get_or_create_usage(session, test_user)
-        usage.credits_used = 19
+        usage.credits_used = 49
         session.add(usage)
         session.commit()
 
@@ -152,7 +160,7 @@ class TestCreditChecks:
     ):
         get_or_create_subscription(session, test_user)
         usage = get_or_create_usage(session, test_user)
-        usage.credits_used = 10
+        usage.credits_used = 40
         session.add(usage)
         session.commit()
 
@@ -185,14 +193,15 @@ class TestBillingAPI:
         assert "BASIC" in data
         assert "PRO" in data
         assert "ULTRA" in data
-        assert data["BASIC"]["credits_per_month"] == 145
-        assert data["PRO"]["credits_per_month"] == 545
-        assert "paddle_price_id" in data["BASIC"]
+        assert "BYOK" in data
+        assert data["BASIC"]["credits_per_month"] == 150
+        assert data["PRO"]["credits_per_month"] == 500
+        assert data["ULTRA"]["credits_per_month"] == 1200
+        assert data["BYOK"]["credits_per_month"] == -1
+        assert "variant_id" in data["BASIC"]
 
-    def test_paddle_config_requires_api_key(
-        self, client: TestClient, auth_headers: dict
-    ):
-        response = client.get("/billing/paddle-config", headers=auth_headers)
+    def test_ls_config_requires_api_key(self, client: TestClient, auth_headers: dict):
+        response = client.get("/billing/ls-config", headers=auth_headers)
         assert response.status_code == 503
 
 
@@ -201,7 +210,7 @@ class TestCampaignCreditIntegration:
         self, client: TestClient, auth_headers: dict, session: Session, test_user: User
     ):
         usage = get_or_create_usage(session, test_user)
-        usage.credits_used = 18
+        usage.credits_used = 48
         session.add(usage)
         session.commit()
 
@@ -228,7 +237,7 @@ class TestCreditPacks:
         assert packs["PACK_50"]["credits"] == 50
         assert packs["PACK_150"]["credits"] == 150
         assert packs["PACK_500"]["credits"] == 500
-        assert "paddle_price_id" in packs["PACK_50"]
+        assert "variant_id" in packs["PACK_50"]
 
 
 class TestBonusCredits:
@@ -250,7 +259,7 @@ class TestBonusCredits:
     ):
         usage = get_or_create_usage(session, test_user)
         usage.bonus_credits = 50
-        usage.credits_used = 15
+        usage.credits_used = 45
         session.add(usage)
         session.commit()
 
@@ -261,10 +270,10 @@ class TestBonusCredits:
     ):
         usage = get_or_create_usage(session, test_user)
         usage.bonus_credits = 10
-        usage.credits_used = 15
+        usage.credits_used = 55
         session.add(usage)
         session.commit()
 
         with pytest.raises(HTTPException) as exc_info:
-            check_credits(session, test_user, 20)
+            check_credits(session, test_user, 10)
         assert exc_info.value.status_code == 402

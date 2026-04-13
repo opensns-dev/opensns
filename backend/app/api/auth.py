@@ -491,6 +491,18 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/logout")
-async def logout(response: Response):
+async def logout(
+    response: Response,
+    refresh_token: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
     clear_access_token_cookie(response)
+    if refresh_token:
+        token_obj = session.exec(
+            select(RefreshToken).where(RefreshToken.token == refresh_token)
+        ).first()
+        if token_obj and not token_obj.revoked:
+            token_obj.revoked = True
+            session.add(token_obj)
+            session.commit()
     return {"message": "Logged out successfully"}

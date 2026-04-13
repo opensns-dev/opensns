@@ -1,0 +1,110 @@
+{
+  "common": {
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "create": "생성",
+    "edit": "수정",
+    "close": "닫기",
+    "confirm": "확인",
+    "loading": "로딩 중...",
+    "error": "오류",
+    "success": "성공",
+    "search": "검색",
+    "noResults": "결과가 없습니다",
+    "back": "뒤로",
+    "next": "다음",
+    "processing": "처리 중..."
+  },
+  "nav": {
+    "dashboard": "대시보드",
+    "campaigns": "캠페인",
+    "assets": "에셋",
+    "logs": "로그",
+    "repurpose": "리퍼포징",
+    "settings": "설정",
+    "billing": "결제",
+    "logout": "로그아웃"
+  },
+  "dashboard": {
+    "title": "대시보드",
+    "totalCampaigns": "총 캠페인",
+    "totalAssets": "총 에셋",
+    "creditsRemaining": "남은 크레딧",
+    "recentCampaigns": "최근 캠페인"
+  },
+  "campaigns": {
+    "title": "캠페인",
+    "create": "캠페인 만들기",
+    "productUrl": "상품 URL",
+    "status": "상태",
+    "createdAt": "생성일",
+    "noCampaigns": "아직 캠페인이 없습니다",
+    "detail": "캠페인 상세"
+  },
+  "templates": {
+    "title": "템플릿",
+    "filter": "필터",
+    "industry": "업종",
+    "platform": "플랫폼",
+    "all": "전체"
+  },
+  "brandKits": {
+    "title": "브랜드 킷",
+    "create": "브랜드 킷 만들기",
+    "name": "이름",
+    "noBrandKits": "아직 브랜드 킷이 없습니다"
+  },
+  "settings": {
+    "title": "설정",
+    "profile": "프로필",
+    "apiKeys": "API 키",
+    "engines": "엔진",
+    "language": "언어"
+  },
+  "repurpose": {
+    "title": "콘텐츠 리퍼포징",
+    "subtitle": "유튜브 영상을 다양한 플랫폼 콘텐츠로 자동 변환",
+    "newRepurpose": "새 리퍼포징",
+    "youtubeUrl": "YouTube URL",
+    "toneAndManner": "톤앤매너",
+    "outputPlatforms": "출력 플랫폼",
+    "startRepurpose": "리퍼포징 시작",
+    "previousJobs": "이전 작업",
+    "noJobs": "아직 리퍼포징 작업이 없습니다",
+    "platforms": {
+      "naverBlog": "네이버 블로그",
+      "xThread": "X 스레드",
+      "instagram": "인스타그램",
+      "brunch": "브런치 스토리",
+      "naverPost": "네이버 포스트",
+      "shortClip": "숏폼 클립"
+    },
+    "tones": {
+      "friendly": "존댓말/친근",
+      "formal": "존댓말/전문적",
+      "casual": "반말/캐주얼"
+    },
+    "status": {
+      "pending": "대기 중",
+      "extracting": "오디오 추출 중",
+      "transcribing": "음성 변환 중",
+      "generating": "콘텐츠 생성 중",
+      "completed": "완료",
+      "failed": "실패"
+    },
+    "toast": {
+      "startSuccess": "리퍼포징 시작",
+      "startSuccessDesc": "콘텐츠 생성이 시작되었습니다.",
+      "startError": "리퍼포징 실패",
+      "startErrorDesc": "YouTube URL을 확인해주세요.",
+      "deleteSuccess": "삭제 완료",
+      "deleteError": "삭제 실패"
+    }
+  },
+  "language": {
+    "en": "English",
+    "ko": "한국어",
+    "switchTo": "언어"
+  }
+}

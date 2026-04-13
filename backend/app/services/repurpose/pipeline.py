@@ -17,6 +17,7 @@ from app.models.models import (
 from app.core.encryption import decrypt_api_key
 from app.core.config import settings as app_settings
 from app.core.registry import engine_registry
+from app.core.credential_resolver import resolve_credential
 from app.services.repurpose.youtube import extract_audio
 from app.services.repurpose.transcribe import transcribe_audio
 from app.services.repurpose.generator import ContentGenerator
@@ -27,15 +28,12 @@ logger = logging.getLogger(__name__)
 
 
 def _get_openai_api_key(session: Session, user_id: int) -> str | None:
-    user_settings = session.get(UserSettings, user_id)
-    if user_settings and user_settings.openai_api_key:
-        try:
-            return decrypt_api_key(
-                user_settings.openai_api_key,
-                app_settings.API_KEY_ENCRYPTION_KEY,
-            )
-        except Exception:
-            pass
+    """Get OpenAI API key, preferring new ProviderCredential table over legacy."""
+    # Try new ProviderCredential table first, then fallback to legacy
+    api_key, _ = resolve_credential(session, user_id, "openai")
+    if api_key:
+        return api_key
+
     return app_settings.OPENAI_API_KEY
 
 
@@ -71,8 +69,10 @@ async def _broadcast_progress(job_id: int, step: str, message: str) -> None:
                 "message": message,
             },
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(
+            "Failed to broadcast progress for job %s: %s", job_id, e.__class__.__name__
+        )
 
 
 async def run_repurpose_pipeline(job_id: int) -> None:

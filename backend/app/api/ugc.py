@@ -1,12 +1,13 @@
 from typing import List, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlmodel import Session
 
 from app.core.auth import get_current_user
 from app.core.encryption import decrypt_api_key
 from app.core.registry import engine_registry
+from app.core.rate_limit import limiter
 from app.db import get_session
 from app.models.models import User, UserSettings
 from app.services.video.interfaces import AvatarInfo, VoiceInfo
@@ -67,7 +68,9 @@ def _get_ugc_engine_for_user(engine_name: str, user_settings: UserSettings | Non
 
 
 @router.get("/engines", response_model=UGCEnginesResponse)
+@limiter.limit("60/minute")
 async def list_ugc_engines(
+    request: Request,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -109,7 +112,9 @@ async def list_ugc_engines(
 
 
 @router.get("/avatars", response_model=AvatarsResponse)
+@limiter.limit("60/minute")
 async def list_avatars(
+    request: Request,
     engine: UGC_ENGINE_TYPES = Query(default="heygen"),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -127,7 +132,9 @@ async def list_avatars(
 
 
 @router.get("/voices", response_model=VoicesResponse)
+@limiter.limit("60/minute")
 async def list_voices(
+    request: Request,
     engine: UGC_ENGINE_TYPES = Query(default="heygen"),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),

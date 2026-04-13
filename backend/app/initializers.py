@@ -1,6 +1,9 @@
 from app.core.registry import engine_registry
 from app.services.fallback_llm import FallbackLLMAdapter
 from app.services.openai_adapter import OpenAIAdapter
+from app.services.anthropic_adapter import AnthropicAdapter
+from app.services.gemini_adapter import GeminiAdapter
+from app.services.groq_adapter import GroqAdapter
 from app.services.ollama_adapter import OllamaAdapter
 from app.services.image.comfyui_adapter import ComfyUIAdapter
 from app.services.image.fal_adapter import FalAIAdapter, FluxProAdapter
@@ -9,6 +12,8 @@ from app.services.video.comfyui_video_adapter import ComfyUIVideoAdapter
 from app.services.video.heygen_adapter import HeyGenAdapter
 from app.services.video.did_adapter import DIDAdapter
 from app.services.video.sadtalker_adapter import SadTalkerAdapter
+from app.services.audio.tts import OpenAITTSAdapter, EdgeTTSAdapter
+from app.services.audio.bgm import StaticBGMAdapter
 from app.core.config import settings
 
 
@@ -16,6 +21,15 @@ def register_engines():
     engine_registry.register_llm_engine("fallback", FallbackLLMAdapter)
     engine_registry.register_llm_engine(
         "openai", lambda: OpenAIAdapter(api_key=settings.OPENAI_API_KEY)
+    )
+    engine_registry.register_llm_engine(
+        "anthropic", lambda: AnthropicAdapter(api_key=settings.ANTHROPIC_API_KEY)
+    )
+    engine_registry.register_llm_engine(
+        "gemini", lambda: GeminiAdapter(api_key=settings.GOOGLE_API_KEY)
+    )
+    engine_registry.register_llm_engine(
+        "groq", lambda: GroqAdapter(api_key=settings.GROQ_API_KEY)
     )
     engine_registry.register_llm_engine("ollama", lambda: OllamaAdapter())
 
@@ -45,3 +59,12 @@ def register_engines():
     engine_registry.register_video_engine(
         "sadtalker", lambda: SadTalkerAdapter(endpoint_url=settings.SADTALKER_URL)
     )
+
+    # TTS Engines
+    engine_registry.register_tts_engine(
+        "openai-tts", lambda: OpenAITTSAdapter(api_key=settings.OPENAI_API_KEY)
+    )
+    engine_registry.register_tts_engine("edge-tts", EdgeTTSAdapter)
+
+    # BGM Engines
+    engine_registry.register_bgm_engine("static-bgm", StaticBGMAdapter)

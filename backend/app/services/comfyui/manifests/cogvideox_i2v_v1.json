@@ -1,0 +1,123 @@
+{
+  "manifest_version": "1.0",
+  "workflow_id": "cogvideox_i2v_v1",
+  "workflow_type": "video",
+  "name": "CogVideoX Image-to-Video",
+  "description": "Generates video from a static image using CogVideoX I2V (Image-to-Video) model. Creates smooth product showcase videos with motion and professional advertisement quality.",
+  "author": "OpenSNS",
+  "version": "1.0",
+  "required_nodes": [
+    {
+      "node_class": "LoadImage",
+      "required": true,
+      "description": "Loads the input image from file path",
+      "required_inputs": {
+        "image": "COMBO"
+      }
+    },
+    {
+      "node_class": "CLIPVisionLoader",
+      "required": true,
+      "description": "Loads CLIP Vision model for image encoding",
+      "required_inputs": {
+        "clip_name": "COMBO"
+      }
+    },
+    {
+      "node_class": "CogVideoXImageEncode",
+      "required": true,
+      "description": "Encodes image for CogVideoX conditioning",
+      "required_inputs": {
+        "image": "IMAGE",
+        "vae": "VAE",
+        "clip_vision": "CLIP_VISION"
+      }
+    },
+    {
+      "node_class": "CogVideoXTextEncode",
+      "required": true,
+      "description": "Encodes motion prompt text",
+      "required_inputs": {
+        "prompt": "STRING",
+        "text_encoder": "CLIP"
+      }
+    },
+    {
+      "node_class": "CogVideoXModelLoader",
+      "required": true,
+      "description": "Loads CogVideoX I2V model",
+      "required_inputs": {
+        "model_name": "COMBO"
+      }
+    },
+    {
+      "node_class": "CogVideoXSampler",
+      "required": true,
+      "description": "Runs CogVideoX diffusion sampling",
+      "required_inputs": {
+        "model": "MODEL",
+        "positive": "CONDITIONING",
+        "negative": "CONDITIONING",
+        "image_cond_latents": "LATENT",
+        "num_frames": "INT",
+        "steps": "INT",
+        "cfg": "FLOAT",
+        "seed": "INT"
+      }
+    },
+    {
+      "node_class": "CogVideoXDecode",
+      "required": true,
+      "description": "Decodes video latents to frames",
+      "required_inputs": {
+        "samples": "LATENT",
+        "vae": "VAE"
+      }
+    },
+    {
+      "node_class": "VHS_VideoCombine",
+      "required": true,
+      "description": "Combines frames into video file",
+      "required_inputs": {
+        "images": "IMAGE",
+        "frame_rate": "INT",
+        "filename_prefix": "STRING",
+        "format": "COMBO"
+      }
+    }
+  ],
+  "required_models": [
+    {
+      "logical_id": "cogvideox_5b_i2v",
+      "model_type": "video_model",
+      "required": true,
+      "alternatives": ["cogvideox_5b_i2v_fp16", "cogvideox_2b_i2v"],
+      "description": "CogVideoX I2V model for image-to-video generation"
+    },
+    {
+      "logical_id": "clip_vision_vit_h",
+      "model_type": "clip_vision",
+      "required": true,
+      "alternatives": ["clip_vision_vit_g", "clip_vision_vit_l"],
+      "description": "CLIP Vision model for image encoding"
+    }
+  ],
+  "expected_outputs": [
+    {
+      "output_type": "video",
+      "source_node_class": "VHS_VideoCombine",
+      "source_output_index": 0,
+      "filename_pattern": "opensns_video*.mp4",
+      "is_primary": true
+    }
+  ],
+  "parameters": {
+    "default_motion_prompt": "Smooth product showcase, professional advertisement, camera movement, dynamic lighting",
+    "default_frame_rate": 8,
+    "default_frames": 49,
+    "default_steps": 50,
+    "default_cfg": 6.0,
+    "video_format": "video/h264-mp4",
+    "filename_prefix": "opensns_video"
+  }
+}

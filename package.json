@@ -2,9 +2,15 @@
   "name": "opensns",
   "private": true,
   "scripts": {
-    "build": "npm run build:frontend && npm run build:docs && npm run merge",
-    "build:frontend": "cd frontend && bun install && bun run build",
+    "build": "bun run build:docs && bun run copy-docs && bun run build:frontend",
+    "build:static": "bun run build:docs && bun run copy-docs && bun run build:frontend:static && bun run merge:static",
     "build:docs": "cd docs && bun install && bun run build",
-    "merge": "cp -r docs/dist frontend/out/docs && cp frontend/public/_routes.json frontend/out/_routes.json"
+    "build:frontend": "cd frontend && bun install && BUILD_STANDALONE=true bun run build",
+    "build:frontend:static": "cd frontend && bun install && bun run build",
+    "copy-docs": "rm -rf frontend/public/docs && cp -r docs/dist frontend/public/docs",
+    "merge:static": "cp frontend/public/_routes.json frontend/out/_routes.json",
+    "dev": "bun run dev:frontend & bun run dev:docs",
+    "dev:frontend": "cd frontend && bun dev",
+    "dev:docs": "cd docs && bun dev"
   }
 }

@@ -30,7 +30,8 @@ class FalVideoAdapter(BaseVideoAdapter):
                 },
                 json={
                     "image_url": request.images[0] if request.images else "",
-                    "prompt": f"Smooth camera movement, professional product advertisement, {request.aspect_ratio} format",
+                    "prompt": request.prompt
+                    or f"Smooth camera movement, professional product advertisement, {request.aspect_ratio} format",
                     "duration": min(request.duration, 10),
                 },
                 timeout=180.0,

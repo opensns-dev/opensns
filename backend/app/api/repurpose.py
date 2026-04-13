@@ -2,10 +2,11 @@ import json
 import re
 from typing import List
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlmodel import Session, select
 
 from app.core.auth import get_current_user
+from app.core.rate_limit import limiter
 from app.db import get_session
 from app.models.models import (
     CREDIT_COSTS,
@@ -76,7 +77,9 @@ def _content_to_response(content: RepurposeContent) -> RepurposeContentResponse:
 
 
 @router.post("/", response_model=RepurposeJobResponse)
+@limiter.limit("5/minute")
 async def create_repurpose_job(
+    request: Request,
     job_in: RepurposeJobCreate,
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
@@ -103,7 +106,9 @@ async def create_repurpose_job(
 
 
 @router.get("/", response_model=List[RepurposeJobResponse])
+@limiter.limit("60/minute")
 async def list_repurpose_jobs(
+    request: Request,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -116,7 +121,9 @@ async def list_repurpose_jobs(
 
 
 @router.get("/{job_id}", response_model=RepurposeJobResponse)
+@limiter.limit("60/minute")
 async def get_repurpose_job(
+    request: Request,
     job_id: int,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -133,7 +140,9 @@ async def get_repurpose_job(
 
 
 @router.get("/{job_id}/contents", response_model=List[RepurposeContentResponse])
+@limiter.limit("60/minute")
 async def get_repurpose_contents(
+    request: Request,
     job_id: int,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -154,7 +163,9 @@ async def get_repurpose_contents(
 
 
 @router.delete("/{job_id}")
+@limiter.limit("20/minute")
 async def delete_repurpose_job(
+    request: Request,
     job_id: int,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),

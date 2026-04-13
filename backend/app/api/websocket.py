@@ -26,6 +26,8 @@ async def authenticate_websocket(
     - 4003: Forbidden (user doesn't own the campaign)
     """
     if not token:
+        token = websocket.cookies.get("access_token")
+    if not token:
         logger.warning(
             f"WebSocket auth failed for campaign {campaign_id}: missing token"
         )

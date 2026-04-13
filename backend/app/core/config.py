@@ -14,8 +14,12 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     PROJECT_NAME: str = "OpenSNS"
+    DEBUG: bool = False
+    SENTRY_DSN: str | None = None
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1
     DATABASE_URL: str = "sqlite:///./opensns.db"
     REDIS_URL: str = "redis://localhost:6379/0"
+    AUDIO_MIX_TIMEOUT_SECONDS: int = 300
 
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
@@ -35,17 +39,16 @@ class Settings(BaseSettings):
                 )
         return v
 
-    PADDLE_API_KEY: str | None = None
-    PADDLE_WEBHOOK_SECRET: str | None = None
-    PADDLE_ENVIRONMENT: str = "sandbox"  # "sandbox" or "production"
-    # Subscription price IDs (from Paddle dashboard)
-    PADDLE_PRICE_ID_BASIC: str | None = None
-    PADDLE_PRICE_ID_PRO: str | None = None
-    PADDLE_PRICE_ID_ULTRA: str | None = None
-    # Credit pack price IDs (one-time purchases)
-    PADDLE_PRICE_ID_CREDITS_50: str | None = None
-    PADDLE_PRICE_ID_CREDITS_150: str | None = None
-    PADDLE_PRICE_ID_CREDITS_500: str | None = None
+    LEMONSQUEEZY_API_KEY: str | None = None
+    LEMONSQUEEZY_WEBHOOK_SECRET: str | None = None
+    LEMONSQUEEZY_STORE_ID: str | None = None
+    LEMONSQUEEZY_VARIANT_ID_BASIC: str | None = None
+    LEMONSQUEEZY_VARIANT_ID_BYOK: str | None = None
+    LEMONSQUEEZY_VARIANT_ID_PRO: str | None = None
+    LEMONSQUEEZY_VARIANT_ID_ULTRA: str | None = None
+    LEMONSQUEEZY_VARIANT_ID_CREDITS_50: str | None = None
+    LEMONSQUEEZY_VARIANT_ID_CREDITS_150: str | None = None
+    LEMONSQUEEZY_VARIANT_ID_CREDITS_500: str | None = None
 
     RESEND_API_KEY: str | None = None
     EMAIL_FROM: str = "OpenSNS <noreply@opensns.dev>"
@@ -59,6 +62,11 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001"
 
     OPENAI_API_KEY: str | None = None
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+    OPENAI_MODEL: str = "gpt-4o"
+    ANTHROPIC_API_KEY: str | None = None
+    GOOGLE_API_KEY: str | None = None
+    GROQ_API_KEY: str | None = None
     FAL_KEY: str | None = None
     COMFYUI_URL: str = "http://localhost:8188"
     OLLAMA_URL: str = "http://localhost:11434"
@@ -66,6 +74,25 @@ class Settings(BaseSettings):
     HEYGEN_API_KEY: str | None = None
     DID_API_KEY: str | None = None
     SADTALKER_URL: str | None = None
+
+    FACEBOOK_APP_ID: str = ""
+    FACEBOOK_APP_SECRET: str = ""
+    FACEBOOK_REDIRECT_URI: str = "http://localhost:8000/publishing/meta/callback"
+
+    TWITTER_CLIENT_ID: str = ""
+    TWITTER_CLIENT_SECRET: str = ""
+    TWITTER_REDIRECT_URI: str = "http://localhost:8000/publishing/x/callback"
+
+    THREADS_APP_ID: str = ""
+    THREADS_APP_SECRET: str = ""
+    THREADS_REDIRECT_URI: str = "http://localhost:8000/publishing/threads/callback"
+
+    STORAGE_ENDPOINT_URL: str | None = None
+    STORAGE_ACCESS_KEY_ID: str | None = None
+    STORAGE_SECRET_ACCESS_KEY: str | None = None
+    STORAGE_BUCKET_NAME: str = "opensns-assets"
+    STORAGE_REGION: str = "auto"
+    STORAGE_PUBLIC_URL: str | None = None
 
     API_KEY_ENCRYPTION_KEY: str
 
@@ -84,7 +111,7 @@ class Settings(BaseSettings):
                 )
         return v
 
-    DEFAULT_LLM_ENGINE: str = "openai"
+    DEFAULT_LLM_ENGINE: str = "openai"  # openai, anthropic, gemini, groq, ollama
     DEFAULT_IMAGE_ENGINE: str = "fal"
     DEFAULT_VIDEO_ENGINE: str = "fal-video"
 
