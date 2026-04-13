@@ -11,12 +11,13 @@ def init_db():
 
     if os.environ.get("TESTING") == "1":
         SQLModel.metadata.create_all(engine)
-    else:
+    elif os.environ.get("_MIGRATIONS_DONE") != "1":
         from alembic.config import Config
         from alembic import command
 
         alembic_cfg = Config("alembic.ini")
         command.upgrade(alembic_cfg, "head")
+        os.environ["_MIGRATIONS_DONE"] = "1"
 
 
 def get_session():
