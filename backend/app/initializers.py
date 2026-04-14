@@ -1,6 +1,7 @@
 from app.core.registry import engine_registry
 from app.services.fallback_llm import FallbackLLMAdapter
 from app.services.openai_adapter import OpenAIAdapter
+from app.services.openrouter_adapter import OpenRouterAdapter
 from app.services.anthropic_adapter import AnthropicAdapter
 from app.services.gemini_adapter import GeminiAdapter
 from app.services.groq_adapter import GroqAdapter
@@ -30,6 +31,10 @@ def register_engines():
     )
     engine_registry.register_llm_engine(
         "groq", lambda: GroqAdapter(api_key=settings.GROQ_API_KEY)
+    )
+    engine_registry.register_llm_engine(
+        "openrouter",
+        lambda: OpenRouterAdapter(api_key=settings.OPENROUTER_API_KEY),
     )
     engine_registry.register_llm_engine("ollama", lambda: OllamaAdapter())
 

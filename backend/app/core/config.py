@@ -64,6 +64,8 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str | None = None
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
     OPENAI_MODEL: str = "gpt-4o"
+    OPENROUTER_API_KEY: str | None = None
+    OPENROUTER_MODEL: str = "openai/gpt-4o"
     ANTHROPIC_API_KEY: str | None = None
     GOOGLE_API_KEY: str | None = None
     GROQ_API_KEY: str | None = None
@@ -111,7 +113,9 @@ class Settings(BaseSettings):
                 )
         return v
 
-    DEFAULT_LLM_ENGINE: str = "openai"  # openai, anthropic, gemini, groq, ollama
+    DEFAULT_LLM_ENGINE: str = (
+        "openai"  # openai, openrouter, anthropic, gemini, groq, ollama
+    )
     DEFAULT_IMAGE_ENGINE: str = "fal"
     DEFAULT_VIDEO_ENGINE: str = "fal-video"
 
