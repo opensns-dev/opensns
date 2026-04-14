@@ -201,7 +201,11 @@ class TestBillingAPI:
         assert "variant_id" in data["BASIC"]
 
     def test_ls_config_requires_api_key(self, client: TestClient, auth_headers: dict):
-        response = client.get("/billing/ls-config", headers=auth_headers)
+        from unittest.mock import patch
+
+        with patch("app.api.billing.settings") as mock_settings:
+            mock_settings.LEMONSQUEEZY_API_KEY = ""
+            response = client.get("/billing/ls-config", headers=auth_headers)
         assert response.status_code == 503
 
 

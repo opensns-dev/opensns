@@ -138,7 +138,9 @@ def _get_from_legacy_settings(
     provider_name: str,
 ) -> tuple[Optional[str], Optional[str]]:
     """Get credentials from legacy UserSettings fields."""
-    user_settings = session.get(UserSettings, user_id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == user_id)
+    ).first()
     if not user_settings:
         return None, None
 
@@ -264,7 +266,9 @@ def _write_to_legacy_settings(
     endpoint_url: Optional[str],
 ) -> None:
     """Write credential to legacy UserSettings fields."""
-    user_settings = session.get(UserSettings, user_id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == user_id)
+    ).first()
     if not user_settings:
         user_settings = UserSettings(user_id=user_id)
         session.add(user_settings)

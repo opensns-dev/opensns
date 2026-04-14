@@ -101,7 +101,7 @@ Paste a product URL. Get complete ad campaigns in under 60 seconds.
 
 ### One-Click Deploy
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/opensns)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/opensns-dev/opensns)
 [![Deploy on Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/opensns-dev/opensns)
 
 ### Docker Compose (Recommended)

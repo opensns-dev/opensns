@@ -87,7 +87,9 @@ async def create_campaign(
     check_image_credits(session, current_user, 3)
 
     # Pre-flight TTS credit check: if user has TTS enabled, ensure credits exist
-    user_settings = session.get(UserSettings, current_user.id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == current_user.id)
+    ).first()
     if user_settings and user_settings.tts_enabled:
         check_tts_credits(session, current_user, 1)
 

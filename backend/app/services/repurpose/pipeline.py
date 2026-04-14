@@ -3,7 +3,7 @@ import logging
 import os
 import shutil
 
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.db import engine
 from app.models.models import (
@@ -38,7 +38,9 @@ def _get_openai_api_key(session: Session, user_id: int) -> str | None:
 
 
 def _get_llm_engine_name(session: Session, user_id: int) -> str:
-    user_settings = session.get(UserSettings, user_id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == user_id)
+    ).first()
     if user_settings and user_settings.default_llm_engine:
         return user_settings.default_llm_engine
     return app_settings.DEFAULT_LLM_ENGINE

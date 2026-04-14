@@ -2,7 +2,7 @@ from typing import List, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.core.auth import get_current_user
 from app.core.encryption import decrypt_api_key
@@ -74,7 +74,9 @@ async def list_ugc_engines(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    user_settings = session.get(UserSettings, current_user.id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == current_user.id)
+    ).first()
 
     engines = [
         UGCEngineInfo(
@@ -119,7 +121,9 @@ async def list_avatars(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    user_settings = session.get(UserSettings, current_user.id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == current_user.id)
+    ).first()
 
     try:
         ugc_engine = _get_ugc_engine_for_user(engine, user_settings)
@@ -139,7 +143,9 @@ async def list_voices(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    user_settings = session.get(UserSettings, current_user.id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == current_user.id)
+    ).first()
 
     try:
         ugc_engine = _get_ugc_engine_for_user(engine, user_settings)

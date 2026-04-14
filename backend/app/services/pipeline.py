@@ -15,7 +15,7 @@ from app.models.models import (
     BrandKit,
 )
 from app.db import engine
-from sqlmodel import Session
+from sqlmodel import Session, select
 from app.services.agents.graph import run_marketing_workflow, resume_after_approval
 from app.services.agents.nodes import cleanup_temp_files
 from app.services.agents.state import AgentState
@@ -29,7 +29,9 @@ def _get_user_api_config(session: Session, user_id: int) -> dict:
 
     Uses the new ProviderCredential table first, falling back to legacy UserSettings.
     """
-    user_settings = session.get(UserSettings, user_id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == user_id)
+    ).first()
 
     if not user_settings:
         return {

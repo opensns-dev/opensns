@@ -28,7 +28,9 @@ def apply_ai_label(
 
 def apply_labels_to_campaign(campaign_id: int, user: User, session: Session) -> int:
     """Apply AI disclosure labels to all assets in a campaign. Returns count of labeled assets."""
-    user_settings = session.get(UserSettings, user.id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == user.id)
+    ).first()
     if not user_settings:
         user_settings = UserSettings(user_id=user.id)
         session.add(user_settings)

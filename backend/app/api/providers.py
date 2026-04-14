@@ -365,7 +365,9 @@ async def test_provider_credential(
     if not credential:
         from app.models.models import UserSettings
 
-        user_settings = session.get(UserSettings, current_user.id)  # type: ignore[arg-type]
+        user_settings = session.exec(
+            select(UserSettings).where(UserSettings.user_id == current_user.id)
+        ).first()
         if user_settings:
             legacy_key_map = {
                 "openai": user_settings.openai_api_key,

@@ -21,7 +21,9 @@ async def get_ai_labeling_settings(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    user_settings = session.get(UserSettings, current_user.id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == current_user.id)
+    ).first()
 
     if not user_settings:
         user_settings = UserSettings(user_id=current_user.id)
@@ -52,7 +54,9 @@ async def label_asset(
     if not campaign or campaign.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    user_settings = session.get(UserSettings, current_user.id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == current_user.id)
+    ).first()
     if not user_settings:
         user_settings = UserSettings(user_id=current_user.id)
         session.add(user_settings)

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlmodel import Session
+from sqlmodel import Session, select
 from urllib.parse import urlparse
 import ipaddress
 from app.db import get_session
@@ -97,7 +97,9 @@ async def get_settings(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    user_settings = session.get(UserSettings, current_user.id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == current_user.id)
+    ).first()
 
     if not user_settings:
         user_settings = UserSettings(user_id=current_user.id)  # type: ignore[arg-type]
@@ -144,7 +146,9 @@ async def update_settings(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    user_settings = session.get(UserSettings, current_user.id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == current_user.id)
+    ).first()
 
     if not user_settings:
         user_settings = UserSettings(user_id=current_user.id)  # type: ignore[arg-type]
@@ -283,7 +287,9 @@ async def test_connection(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    user_settings = session.get(UserSettings, current_user.id)
+    user_settings = session.exec(
+        select(UserSettings).where(UserSettings.user_id == current_user.id)
+    ).first()
 
     if not user_settings:
         raise HTTPException(status_code=404, detail="Settings not found")
