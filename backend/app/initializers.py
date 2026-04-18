@@ -8,6 +8,14 @@ from app.services.groq_adapter import GroqAdapter
 from app.services.ollama_adapter import OllamaAdapter
 from app.services.image.comfyui_adapter import ComfyUIAdapter
 from app.services.image.fal_adapter import FalAIAdapter, FluxProAdapter
+from app.services.image.openrouter_image_adapter import OpenRouterImageAdapter
+from app.services.image.openai_image_adapter import OpenAIImageAdapter
+from app.services.image.replicate_adapter import ReplicateAdapter
+from app.services.image.together_adapter import TogetherImageAdapter
+from app.services.image.stability_adapter import StabilityAdapter
+from app.services.image.bfl_adapter import BFLAdapter
+from app.services.image.leonardo_adapter import LeonardoAdapter
+from app.services.image.ideogram_adapter import IdeogramAdapter
 from app.services.video.fal_video_adapter import FalVideoAdapter, RunwayAdapter
 from app.services.video.comfyui_video_adapter import ComfyUIVideoAdapter
 from app.services.video.heygen_adapter import HeyGenAdapter
@@ -44,6 +52,38 @@ def register_engines():
     )
     engine_registry.register_image_engine(
         "flux-pro", lambda: FluxProAdapter(api_key=settings.FAL_KEY)
+    )
+    engine_registry.register_image_engine(
+        "openrouter-image",
+        lambda: OpenRouterImageAdapter(api_key=settings.OPENROUTER_API_KEY),
+    )
+    engine_registry.register_image_engine(
+        "openai-image",
+        lambda: OpenAIImageAdapter(api_key=settings.OPENAI_API_KEY),
+    )
+    engine_registry.register_image_engine(
+        "replicate",
+        lambda: ReplicateAdapter(api_key=settings.REPLICATE_API_TOKEN),
+    )
+    engine_registry.register_image_engine(
+        "together",
+        lambda: TogetherImageAdapter(api_key=settings.TOGETHER_API_KEY),
+    )
+    engine_registry.register_image_engine(
+        "stability",
+        lambda: StabilityAdapter(api_key=settings.STABILITY_API_KEY),
+    )
+    engine_registry.register_image_engine(
+        "bfl",
+        lambda: BFLAdapter(api_key=settings.BFL_API_KEY),
+    )
+    engine_registry.register_image_engine(
+        "leonardo",
+        lambda: LeonardoAdapter(api_key=settings.LEONARDO_API_KEY),
+    )
+    engine_registry.register_image_engine(
+        "ideogram",
+        lambda: IdeogramAdapter(api_key=settings.IDEOGRAM_API_KEY),
     )
 
     engine_registry.register_video_engine(

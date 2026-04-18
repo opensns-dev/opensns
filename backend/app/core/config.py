@@ -70,6 +70,12 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str | None = None
     GROQ_API_KEY: str | None = None
     FAL_KEY: str | None = None
+    REPLICATE_API_TOKEN: str | None = None
+    TOGETHER_API_KEY: str | None = None
+    STABILITY_API_KEY: str | None = None
+    BFL_API_KEY: str | None = None
+    LEONARDO_API_KEY: str | None = None
+    IDEOGRAM_API_KEY: str | None = None
     COMFYUI_URL: str = "http://localhost:8188"
     OLLAMA_URL: str = "http://localhost:11434"
 
@@ -116,7 +122,7 @@ class Settings(BaseSettings):
     DEFAULT_LLM_ENGINE: str = (
         "openai"  # openai, openrouter, anthropic, gemini, groq, ollama
     )
-    DEFAULT_IMAGE_ENGINE: str = "fal"
+    DEFAULT_IMAGE_ENGINE: str = "fal"  # fal, flux-pro, openrouter-image, openai-image, replicate, together, stability, bfl, leonardo, ideogram, comfyui
     DEFAULT_VIDEO_ENGINE: str = "fal-video"
 
 
