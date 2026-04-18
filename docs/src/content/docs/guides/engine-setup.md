@@ -212,6 +212,175 @@ Notes:
 - Install the appropriate Stable Diffusion or Flux models in your ComfyUI environment
 - Make sure the backend can reach the ComfyUI server at the configured URL
 
+### OpenRouter Image
+
+Use OpenRouter when you already have an OpenRouter API key and want image generation via GPT Image or Nano Banana (Gemini Flash Image) models.
+
+Required:
+
+```bash
+OPENROUTER_API_KEY=your-openrouter-key
+```
+
+Set the default engine:
+
+```bash
+DEFAULT_IMAGE_ENGINE=openrouter-image
+```
+
+Notes:
+
+- This uses the same API key as the OpenRouter LLM engine
+- Supports GPT Image 1, Nano Banana (Gemini Flash Image), and other OpenRouter image models
+- Good choice when you want a single API key for both LLM and image generation
+
+### OpenAI GPT Image
+
+Use OpenAI when you want GPT Image or DALL-E models directly from OpenAI.
+
+Required:
+
+```bash
+OPENAI_API_KEY=sk-your-key
+```
+
+Set the default engine:
+
+```bash
+DEFAULT_IMAGE_ENGINE=openai-image
+```
+
+Notes:
+
+- This uses the same API key as the OpenAI LLM engine
+- Supports GPT Image 1/1.5 and DALL-E 3
+
+### Replicate
+
+Use Replicate for access to FLUX, Stable Diffusion, and thousands of community image models.
+
+Required:
+
+```bash
+REPLICATE_API_TOKEN=your-replicate-token
+```
+
+Set the default engine:
+
+```bash
+DEFAULT_IMAGE_ENGINE=replicate
+```
+
+Notes:
+
+- Replicate hosts a large catalog of open-source and commercial image models
+- Generation is async with polling (handled automatically by the adapter)
+
+### Together AI
+
+Use Together AI for fast FLUX image generation.
+
+Required:
+
+```bash
+TOGETHER_API_KEY=your-together-key
+```
+
+Set the default engine:
+
+```bash
+DEFAULT_IMAGE_ENGINE=together
+```
+
+Notes:
+
+- Supports FLUX.1 Schnell and FLUX.1 Pro models
+- Good balance of speed and quality
+
+### Stability AI
+
+Use Stability AI for Stable Diffusion 3 and Stable Image generation.
+
+Required:
+
+```bash
+STABILITY_API_KEY=your-stability-key
+```
+
+Set the default engine:
+
+```bash
+DEFAULT_IMAGE_ENGINE=stability
+```
+
+Notes:
+
+- Uses the Stable Image v2beta API
+- Credit-based pricing
+
+### Black Forest Labs (BFL)
+
+Use BFL for FLUX Pro and FLUX Dev directly from the model creators.
+
+Required:
+
+```bash
+BFL_API_KEY=your-bfl-key
+```
+
+Set the default engine:
+
+```bash
+DEFAULT_IMAGE_ENGINE=bfl
+```
+
+Notes:
+
+- Black Forest Labs created the FLUX model family
+- Generation is async with polling (handled automatically)
+
+### Leonardo AI
+
+Use Leonardo AI for high-quality product and creative image generation.
+
+Required:
+
+```bash
+LEONARDO_API_KEY=your-leonardo-key
+```
+
+Set the default engine:
+
+```bash
+DEFAULT_IMAGE_ENGINE=leonardo
+```
+
+Notes:
+
+- Offers specialized product photography and creative image models
+- Generation is async with polling (handled automatically)
+
+### Ideogram
+
+Use Ideogram for images with strong text rendering and creative generation.
+
+Required:
+
+```bash
+IDEOGRAM_API_KEY=your-ideogram-key
+```
+
+Set the default engine:
+
+```bash
+DEFAULT_IMAGE_ENGINE=ideogram
+```
+
+Notes:
+
+- Strong at rendering text within images
+- Good for ad creatives that need readable text overlays
+
 ## Video Engines
 
 Video engines are used for image-to-video generation.
@@ -416,7 +585,7 @@ Typical setup:
 | Engine Type | Recommended Provider | Why |
 |-------------|----------------------|-----|
 | LLM | OpenAI, Anthropic, Gemini, or Groq | Choose the provider that best matches your model quality, latency, and cost needs |
-| Image | Fal.ai | Simple cloud setup and strong image model support |
+| Image | OpenRouter Image, Fal.ai, or OpenAI | OpenRouter shares a key with LLM; Fal.ai is simple cloud; OpenAI shares a key with LLM |
 | Video | Fal.ai Video | Same key as image generation and a clean hosted workflow |
 | UGC | HeyGen | Strong avatar and voice support for polished talking-head videos |
 | Storage | Cloudflare R2 or AWS S3 | Durable, production-ready asset storage with S3 compatibility |
@@ -424,12 +593,9 @@ Typical setup:
 A practical production `.env` might look like this:
 
 ```bash
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-4o
-DEFAULT_LLM_ENGINE=openai
-
-FAL_KEY=...
-DEFAULT_IMAGE_ENGINE=fal
+OPENROUTER_API_KEY=...
+DEFAULT_LLM_ENGINE=openrouter
+DEFAULT_IMAGE_ENGINE=openrouter-image
 DEFAULT_VIDEO_ENGINE=fal-video
 
 HEYGEN_API_KEY=...

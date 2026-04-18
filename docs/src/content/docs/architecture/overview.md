@@ -56,8 +56,14 @@ OpenSNS follows a clean separation between frontend, backend, and AI services.
 ┌─────────────────────────────────────────────────────────────────┐
 │                       External Services                          │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
-│  │  OpenAI  │  │  Fal.ai  │  │  Ollama  │  │ ComfyUI  │        │
+│  │  OpenAI  │  │  Fal.ai  │  │OpenRouter│  │Replicate │        │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
+│  │Together  │  │Stability │  │   BFL    │  │ Leonardo │        │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐                      │
+│  │ Ideogram │  │  Ollama  │  │ ComfyUI  │                      │
+│  └──────────┘  └──────────┘  └──────────┘                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -98,8 +104,10 @@ Pluggable AI backends:
 
 ```python
 engine_registry.register_llm_engine("openai", OpenAIAdapter)
-engine_registry.register_llm_engine("ollama", OllamaAdapter)
+engine_registry.register_llm_engine("openrouter", OpenRouterAdapter)
 engine_registry.register_image_engine("fal", FalImageAdapter)
+engine_registry.register_image_engine("openrouter-image", OpenRouterImageAdapter)
+engine_registry.register_image_engine("replicate", ReplicateAdapter)
 ```
 
 ## Data Flow

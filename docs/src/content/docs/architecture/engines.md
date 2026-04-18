@@ -10,7 +10,7 @@ OpenSNS uses a registry-based engine system for flexible AI backend configuratio
 | Type | Purpose | Implementations |
 |------|---------|----------------|
 | LLM | Text generation | OpenAI, Ollama, Fallback |
-| Image | Image generation | Fal.ai, ComfyUI |
+| Image | Image generation | Fal.ai, OpenRouter, OpenAI, Replicate, Together, Stability, BFL, Leonardo, Ideogram, ComfyUI |
 | Video | Video generation | Fal.ai, Runway, ComfyUI |
 
 ## Engine Registry

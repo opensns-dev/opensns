@@ -68,8 +68,15 @@ These can be set globally (in `.env`) or per-user (in Settings UI):
 
 | Variable | Description |
 |----------|-------------|
-| `OPENAI_API_KEY` | OpenAI API key for GPT models |
+| `OPENAI_API_KEY` | OpenAI API key for GPT models and GPT Image |
+| `OPENROUTER_API_KEY` | OpenRouter API key for LLM and image models |
 | `FAL_KEY` | Fal.ai API key for image/video generation |
+| `REPLICATE_API_TOKEN` | Replicate API token for image models |
+| `TOGETHER_API_KEY` | Together AI API key for FLUX image models |
+| `STABILITY_API_KEY` | Stability AI API key for Stable Diffusion |
+| `BFL_API_KEY` | Black Forest Labs API key for FLUX |
+| `LEONARDO_API_KEY` | Leonardo AI API key for image generation |
+| `IDEOGRAM_API_KEY` | Ideogram API key for image generation |
 
 ### UGC Video Engines
 
@@ -85,8 +92,8 @@ These can be set globally (in `.env`) or per-user (in Settings UI):
 
 | Variable | Options | Default |
 |----------|---------|---------|
-| `DEFAULT_LLM_ENGINE` | `openai`, `ollama`, `mock` | `openai` |
-| `DEFAULT_IMAGE_ENGINE` | `fal`, `flux-pro`, `comfyui` | `fal` |
+| `DEFAULT_LLM_ENGINE` | `openai`, `openrouter`, `anthropic`, `gemini`, `groq`, `ollama` | `openai` |
+| `DEFAULT_IMAGE_ENGINE` | `fal`, `flux-pro`, `openrouter-image`, `openai-image`, `replicate`, `together`, `stability`, `bfl`, `leonardo`, `ideogram`, `comfyui` | `fal` |
 | `DEFAULT_VIDEO_ENGINE` | `fal-video`, `runway`, `comfyui-video` | `fal-video` |
 | `DEFAULT_UGC_ENGINE` | `heygen`, `d-id`, `sadtalker` | `heygen` |
 
@@ -176,8 +183,7 @@ API_KEY_ENCRYPTION_KEY=your-64-char-hex-key-from-openssl-rand
 # ===========================================
 # AI ENGINES (optional - users can set in UI)
 # ===========================================
-OPENAI_API_KEY=sk-...
-FAL_KEY=...
+OPENROUTER_API_KEY=...
 
 # UGC Video
 HEYGEN_API_KEY=...
@@ -186,8 +192,8 @@ DID_API_KEY=...
 # ===========================================
 # DEFAULT ENGINES
 # ===========================================
-DEFAULT_LLM_ENGINE=openai
-DEFAULT_IMAGE_ENGINE=fal
+DEFAULT_LLM_ENGINE=openrouter
+DEFAULT_IMAGE_ENGINE=openrouter-image
 DEFAULT_VIDEO_ENGINE=fal-video
 DEFAULT_UGC_ENGINE=heygen
 
@@ -212,10 +218,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES=10080
 API_KEY_ENCRYPTION_KEY=your-encryption-key
 
 OPENAI_API_KEY=sk-...
+OPENROUTER_API_KEY=...
 FAL_KEY=...
 
-DEFAULT_LLM_ENGINE=openai
-DEFAULT_IMAGE_ENGINE=fal
+DEFAULT_LLM_ENGINE=openrouter
+DEFAULT_IMAGE_ENGINE=openrouter-image
 DEFAULT_VIDEO_ENGINE=fal-video
 DEFAULT_UGC_ENGINE=heygen
 ```
