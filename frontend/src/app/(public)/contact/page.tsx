@@ -1,5 +1,14 @@
-import Link from "next/link";
+import { type Metadata } from "next";
 import { Mail, Github, MessageCircle, FileText } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Contact Us",
+  description:
+    "Get in touch with the OpenSNS team. Questions, feedback, or partnership inquiries welcome.",
+  alternates: {
+    canonical: "https://opensns.pages.dev/contact/",
+  },
+};
 
 export default function ContactPage() {
   return (

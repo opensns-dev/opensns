@@ -1,4 +1,14 @@
 import Link from "next/link";
+import { type Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Refund Policy",
+  description:
+    "OpenSNS refund policy. Learn about our refund and cancellation terms.",
+  alternates: {
+    canonical: "https://opensns.pages.dev/refund/",
+  },
+};
 
 export default function RefundPage() {
   return (

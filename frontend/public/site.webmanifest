@@ -1,0 +1,12 @@
+{
+  "name": "OpenSNS - AI Marketing Agent",
+  "short_name": "OpenSNS",
+  "description": "Open-source AI marketing agent that generates ad creatives from a product URL.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#18181b",
+  "icons": [
+    { "src": "/logo-icon.svg", "type": "image/svg+xml", "sizes": "any" }
+  ]
+}

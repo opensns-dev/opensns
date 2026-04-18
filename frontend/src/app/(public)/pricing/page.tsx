@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Check,
@@ -9,6 +10,37 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: { absolute: "Pricing - OpenSNS" },
+  description:
+    "Simple, transparent pricing for AI marketing. Free tier included. Self-host for unlimited generations.",
+  alternates: {
+    canonical: "https://opensns.pages.dev/pricing/",
+  },
+  openGraph: {
+    type: "website",
+    url: "https://opensns.pages.dev/pricing/",
+    title: "Pricing - OpenSNS",
+    description:
+      "Simple, transparent pricing for AI marketing. Free tier included. Self-host for unlimited generations.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "OpenSNS Pricing",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pricing - OpenSNS",
+    description:
+      "Simple, transparent pricing for AI marketing. Free tier included. Self-host for unlimited generations.",
+    images: ["/og-image.png"],
+  },
+};
 
 const PLANS = [
   {
@@ -147,9 +179,73 @@ const FAQ = [
   },
 ];
 
+const PRICING_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: "OpenSNS",
+  description:
+    "Simple, transparent pricing for AI marketing. Free tier included. Self-host for unlimited generations.",
+  url: "https://opensns.pages.dev/pricing/",
+  brand: {
+    "@type": "Brand",
+    name: "OpenSNS",
+  },
+  offers: [
+    {
+      "@type": "Offer",
+      name: "Free",
+      price: "0",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: "https://opensns.pages.dev/pricing/",
+      description: "50 credits/month, 1 team member, all platforms supported.",
+    },
+    {
+      "@type": "Offer",
+      name: "Basic",
+      price: "9",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: "https://opensns.pages.dev/pricing/",
+      description: "150 credits/month for growing businesses.",
+    },
+    {
+      "@type": "Offer",
+      name: "BYOK",
+      price: "15",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: "https://opensns.pages.dev/pricing/",
+      description: "Bring your own API keys with unlimited generations.",
+    },
+    {
+      "@type": "Offer",
+      name: "Pro",
+      price: "29",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: "https://opensns.pages.dev/pricing/",
+      description: "500 credits/month for professional marketers.",
+    },
+    {
+      "@type": "Offer",
+      name: "Ultra",
+      price: "59",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: "https://opensns.pages.dev/pricing/",
+      description: "1,200 credits/month for power users and teams.",
+    },
+  ],
+};
+
 export default function PricingPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(PRICING_JSON_LD) }}
+      />
       {/* Hero */}
       <section className="pt-32 pb-16 px-4 sm:px-6 lg:px-8 text-center">
         <h1 className="text-4xl sm:text-5xl font-extrabold text-zinc-900 dark:text-white tracking-tight mb-4">
@@ -195,11 +291,11 @@ export default function PricingPage() {
                     {plan.period}
                   </span>
                 </div>
-                  <p className="text-sm text-zinc-500 mt-1">
-                    {plan.credits === "Unlimited"
-                      ? "Unlimited credits"
-                      : `${plan.credits} credits/month`}
-                  </p>
+                <p className="text-sm text-zinc-500 mt-1">
+                  {plan.credits === "Unlimited"
+                    ? "Unlimited credits"
+                    : `${plan.credits} credits/month`}
+                </p>
               </div>
 
               <ul className="space-y-3 mb-8 flex-1">

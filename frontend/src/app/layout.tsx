@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { IntlProvider } from "@/providers/intl-provider";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ClientLayout } from "@/components/layout/client-layout";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { WebVitals } from "@/components/analytics/web-vitals";
 import { Toaster } from "sonner";
 
 const geistSans = Geist({
@@ -78,9 +80,16 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
     creator: "@opensns_dev",
   },
+  manifest: "/site.webmanifest",
   robots: {
     index: true,
     follow: true,
+  },
+  alternates: {
+    canonical: "https://opensns.pages.dev/",
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GSC_VERIFICATION,
   },
 };
 
@@ -102,6 +111,8 @@ export default function RootLayout({
               </AuthProvider>
             </QueryProvider>
           </IntlProvider>
+          <GoogleAnalytics />
+          <WebVitals />
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
