@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://opensns.pages.dev/privacy/",
   },
+  openGraph: {
+    title: "Privacy Policy | OpenSNS",
+    description:
+      "OpenSNS privacy policy. Learn how we collect, use, and protect your data.",
+    url: "https://opensns.pages.dev/privacy/",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "OpenSNS" }],
+  },
 };
 
 export default function PrivacyPage() {

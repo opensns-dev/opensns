@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://opensns.pages.dev/terms/",
   },
+  openGraph: {
+    title: "Terms of Service | OpenSNS",
+    description:
+      "OpenSNS terms of service. Read our terms and conditions for using the platform.",
+    url: "https://opensns.pages.dev/terms/",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "OpenSNS" }],
+  },
 };
 
 export default function TermsPage() {

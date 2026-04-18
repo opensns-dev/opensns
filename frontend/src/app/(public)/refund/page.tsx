@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://opensns.pages.dev/refund/",
   },
+  openGraph: {
+    title: "Refund Policy | OpenSNS",
+    description:
+      "OpenSNS refund policy. Learn about our refund and cancellation terms.",
+    url: "https://opensns.pages.dev/refund/",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "OpenSNS" }],
+  },
 };
 
 export default function RefundPage() {

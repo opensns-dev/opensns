@@ -14,12 +14,21 @@ export const metadata: Metadata = {
       "Self-hostable AI marketing agent that generates ad creatives from a product URL. 100% open-source.",
     url: "https://opensns.pages.dev/",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "OpenSNS - Open-Source AI Marketing Agent Platform",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "OpenSNS - Open-Source AI Marketing Agent",
     description:
       "Self-hostable AI marketing agent that generates ad creatives from a product URL.",
+    images: ["/og-image.png"],
   },
 };
 

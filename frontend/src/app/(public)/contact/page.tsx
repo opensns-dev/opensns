@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://opensns.pages.dev/contact/",
   },
+  openGraph: {
+    title: "Contact Us | OpenSNS",
+    description:
+      "Get in touch with the OpenSNS team. Questions, feedback, or partnership inquiries welcome.",
+    url: "https://opensns.pages.dev/contact/",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "OpenSNS" }],
+  },
 };
 
 export default function ContactPage() {
