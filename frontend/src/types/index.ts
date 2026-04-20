@@ -65,10 +65,12 @@ export interface UserSettings {
   ai_label_text: string;
   ai_label_position: string;
   tts_enabled: boolean;
-  tts_engine: string | null;
+  default_tts_engine: string | null;
   tts_voice_id: string | null;
   bgm_enabled: boolean;
+  default_bgm_engine: string | null;
   bgm_style: string | null;
+  default_stt_engine: string | null;
   has_elevenlabs_key: boolean;
 }
 
@@ -108,10 +110,12 @@ export interface UserSettingsUpdate {
   ai_label_text?: string;
   ai_label_position?: string;
   tts_enabled?: boolean;
-  tts_engine?: string;
+  default_tts_engine?: string;
   tts_voice_id?: string;
   bgm_enabled?: boolean;
+  default_bgm_engine?: string;
   bgm_style?: string;
+  default_stt_engine?: string;
   elevenlabs_api_key?: string;
 }
 
@@ -679,7 +683,7 @@ export type PlanTier = "FREE" | "BASIC" | "BYOK" | "PRO" | "ULTRA";
 
 // ============ Provider Registry Types ============
 
-export type ProviderType = "llm" | "image" | "video" | "ugc" | "scraper";
+export type ProviderType = "llm" | "image" | "video" | "ugc" | "scraper" | "tts" | "stt" | "bgm";
 
 export interface ProviderCapability {
   name: string;

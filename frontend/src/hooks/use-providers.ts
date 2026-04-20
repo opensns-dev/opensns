@@ -95,6 +95,9 @@ export function useGroupedProviders() {
     video: [] as Array<{ provider: ProviderRegistryItem; credential?: ProviderCredentialSummary }>,
     ugc: [] as Array<{ provider: ProviderRegistryItem; credential?: ProviderCredentialSummary }>,
     scraper: [] as Array<{ provider: ProviderRegistryItem; credential?: ProviderCredentialSummary }>,
+    tts: [] as Array<{ provider: ProviderRegistryItem; credential?: ProviderCredentialSummary }>,
+    stt: [] as Array<{ provider: ProviderRegistryItem; credential?: ProviderCredentialSummary }>,
+    bgm: [] as Array<{ provider: ProviderRegistryItem; credential?: ProviderCredentialSummary }>,
   };
 
   if (registryData?.providers && credentialsData?.credentials) {

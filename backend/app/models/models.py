@@ -127,6 +127,7 @@ class UserSettings(SQLModel, table=True):
     # Audio settings
     default_tts_engine: str = "openai-tts"
     default_bgm_engine: str = "static-bgm"
+    default_stt_engine: str = "openai-stt"
     tts_enabled: bool = False
     bgm_enabled: bool = False
     tts_voice_id: Optional[str] = None
@@ -164,6 +165,7 @@ class UserSettingsUpdate(BaseModel):
     comfyui_url: Optional[str] = None
     default_tts_engine: Optional[str] = None
     default_bgm_engine: Optional[str] = None
+    default_stt_engine: Optional[str] = None
     tts_enabled: Optional[bool] = None
     bgm_enabled: Optional[bool] = None
     tts_voice_id: Optional[str] = None
@@ -186,6 +188,7 @@ class UserSettingsResponse(BaseModel):
     sadtalker_url: Optional[str]
     default_tts_engine: str
     default_bgm_engine: str
+    default_stt_engine: str
     tts_enabled: bool
     bgm_enabled: bool
     tts_voice_id: Optional[str]

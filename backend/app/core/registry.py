@@ -1,7 +1,7 @@
 from typing import Dict, TypeVar, Generic, Callable, Any
 from app.core.interfaces import BaseLLMAdapter, BaseImageAdapter
 from app.core.exceptions import EngineNotFoundError
-from app.services.audio.interfaces import BaseTTSAdapter, BaseMusicAdapter
+from app.services.audio.interfaces import BaseTTSAdapter, BaseMusicAdapter, BaseSTTAdapter
 
 
 T = TypeVar("T")
@@ -37,6 +37,7 @@ class EngineRegistry:
         self.image_registry = Registry[BaseImageAdapter]("Image")
         self.video_registry: Registry[Any] = Registry("Video")
         self.tts_registry: Registry[BaseTTSAdapter] = Registry("TTS")
+        self.stt_registry: Registry[BaseSTTAdapter] = Registry("STT")
         self.bgm_registry: Registry[BaseMusicAdapter] = Registry("BGM")
 
     def register_llm_engine(self, name: str, factory: Callable[[], BaseLLMAdapter]):
@@ -68,6 +69,15 @@ class EngineRegistry:
 
     def get_tts_engine_or_none(self, name: str) -> BaseTTSAdapter | None:
         return self.tts_registry.get_or_none(name)
+
+    def register_stt_engine(self, name: str, factory: Callable[[], BaseSTTAdapter]):
+        self.stt_registry.register(name, factory)
+
+    def get_stt_engine(self, name: str) -> BaseSTTAdapter:
+        return self.stt_registry.get(name)
+
+    def get_stt_engine_or_none(self, name: str) -> BaseSTTAdapter | None:
+        return self.stt_registry.get_or_none(name)
 
     def register_bgm_engine(self, name: str, factory: Callable[[], BaseMusicAdapter]):
         self.bgm_registry.register(name, factory)

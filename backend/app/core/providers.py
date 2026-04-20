@@ -18,6 +18,7 @@ class ProviderType(str, Enum):
     UGC = "ugc"
     SCRAPER = "scraper"
     TTS = "tts"
+    STT = "stt"
     BGM = "bgm"
 
 
@@ -298,6 +299,17 @@ PROVIDER_MANIFEST: dict[str, ProviderRegistryItem] = {
         requires_key=False,
         requires_url=False,
     ),
+    # STT Providers
+    "openai-stt": ProviderRegistryItem(
+        provider_type=ProviderType.STT,
+        provider_name="openai-stt",
+        display_name="OpenAI Whisper",
+        description="Speech-to-text transcription via Whisper model",
+        requires_key=True,
+        requires_url=False,
+        shared_key_provider="openai",
+        docs_url="https://platform.openai.com/docs/guides/speech-to-text",
+    ),
     # BGM Providers
     "static-bgm": ProviderRegistryItem(
         provider_type=ProviderType.BGM,
@@ -306,6 +318,35 @@ PROVIDER_MANIFEST: dict[str, ProviderRegistryItem] = {
         description="Bundled royalty-free background music tracks",
         requires_key=False,
         requires_url=False,
+    ),
+    "lyria": ProviderRegistryItem(
+        provider_type=ProviderType.BGM,
+        provider_name="lyria",
+        display_name="Google Lyria",
+        description="AI music generation via Gemini API (Lyria 3)",
+        requires_key=True,
+        requires_url=False,
+        shared_key_provider="gemini",
+        docs_url="https://ai.google.dev/gemini-api/docs/music-generation",
+    ),
+    "elevenlabs-music": ProviderRegistryItem(
+        provider_type=ProviderType.BGM,
+        provider_name="elevenlabs-music",
+        display_name="ElevenLabs Music",
+        description="AI music generation with ElevenLabs",
+        requires_key=True,
+        requires_url=False,
+        shared_key_provider="elevenlabs",
+        docs_url="https://elevenlabs.io/docs/api-reference/music",
+    ),
+    "mubert": ProviderRegistryItem(
+        provider_type=ProviderType.BGM,
+        provider_name="mubert",
+        display_name="Mubert",
+        description="AI-generated royalty-free background music",
+        requires_key=True,
+        requires_url=False,
+        docs_url="https://docs.mubert.com",
     ),
 }
 
@@ -334,6 +375,7 @@ def get_default_provider(provider_type: ProviderType) -> Optional[str]:
         ProviderType.UGC: None,
         ProviderType.SCRAPER: "firecrawl",
         ProviderType.TTS: "openai-tts",
+        ProviderType.STT: "openai-stt",
         ProviderType.BGM: "static-bgm",
     }
     return defaults.get(provider_type)

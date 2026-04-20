@@ -84,6 +84,7 @@ class AgentState(TypedDict):
     elevenlabs_api_key: Optional[str]
     default_tts_engine: Optional[str]
     default_bgm_engine: Optional[str]
+    default_stt_engine: Optional[str]
     tts_voice_id: Optional[str]
     bgm_style: Optional[str]
     tts_enabled: bool

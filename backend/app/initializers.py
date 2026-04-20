@@ -22,7 +22,12 @@ from app.services.video.heygen_adapter import HeyGenAdapter
 from app.services.video.did_adapter import DIDAdapter
 from app.services.video.sadtalker_adapter import SadTalkerAdapter
 from app.services.audio.tts import OpenAITTSAdapter, EdgeTTSAdapter
+from app.services.audio.elevenlabs_tts import ElevenLabsTTSAdapter
+from app.services.audio.stt import OpenAISTTAdapter
 from app.services.audio.bgm import StaticBGMAdapter
+from app.services.audio.lyria_adapter import LyriaAdapter
+from app.services.audio.elevenlabs_music_adapter import ElevenLabsMusicAdapter
+from app.services.audio.mubert_adapter import MubertAdapter
 from app.core.config import settings
 
 
@@ -109,7 +114,27 @@ def register_engines():
     engine_registry.register_tts_engine(
         "openai-tts", lambda: OpenAITTSAdapter(api_key=settings.OPENAI_API_KEY)
     )
+    engine_registry.register_tts_engine(
+        "elevenlabs", lambda: ElevenLabsTTSAdapter(api_key=settings.ELEVENLABS_API_KEY)
+    )
     engine_registry.register_tts_engine("edge-tts", EdgeTTSAdapter)
 
-    # BGM Engines
+    engine_registry.register_stt_engine(
+        "openai-stt", lambda: OpenAISTTAdapter(api_key=settings.OPENAI_API_KEY)
+    )
+
     engine_registry.register_bgm_engine("static-bgm", StaticBGMAdapter)
+    engine_registry.register_bgm_engine(
+        "lyria", lambda: LyriaAdapter(api_key=settings.GOOGLE_API_KEY)
+    )
+    engine_registry.register_bgm_engine(
+        "elevenlabs-music",
+        lambda: ElevenLabsMusicAdapter(api_key=settings.ELEVENLABS_API_KEY),
+    )
+    engine_registry.register_bgm_engine(
+        "mubert",
+        lambda: MubertAdapter(
+            access_token=settings.MUBERT_ACCESS_TOKEN,
+            customer_id=settings.MUBERT_CUSTOMER_ID,
+        ),
+    )

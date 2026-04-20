@@ -439,10 +439,12 @@ export default function SettingsPage() {
     ugc_avatar_id: "",
     ugc_voice_id: "",
     tts_enabled: false,
-    tts_engine: "",
+    default_tts_engine: "",
     tts_voice_id: "",
     bgm_enabled: false,
+    default_bgm_engine: "",
     bgm_style: "",
+    default_stt_engine: "",
     ollama_url: "",
     comfyui_url: "",
     sadtalker_url: "",
@@ -472,7 +474,7 @@ export default function SettingsPage() {
   const { data: avatarsData, isLoading: avatarsLoading } = useAvatars(formData.default_ugc_engine);
   const { data: voicesData, isLoading: voicesLoading } = useVoices(formData.default_ugc_engine);
   const { data: ttsVoicesData, isLoading: ttsVoicesLoading } = useTTSVoices(
-    formData.tts_enabled ? formData.tts_engine : null
+    formData.tts_enabled ? formData.default_tts_engine : null
   );
 
   useEffect(() => {
@@ -491,10 +493,12 @@ export default function SettingsPage() {
         ugc_avatar_id: settings.ugc_avatar_id || "",
         ugc_voice_id: settings.ugc_voice_id || "",
         tts_enabled: settings.tts_enabled || false,
-        tts_engine: settings.tts_engine || "",
+        default_tts_engine: settings.default_tts_engine || "",
         tts_voice_id: settings.tts_voice_id || "",
         bgm_enabled: settings.bgm_enabled || false,
+        default_bgm_engine: settings.default_bgm_engine || "",
         bgm_style: settings.bgm_style || "",
+        default_stt_engine: settings.default_stt_engine || "",
         ollama_url: settings.ollama_url || "",
         comfyui_url: settings.comfyui_url || "",
         sadtalker_url: settings.sadtalker_url || "",
@@ -513,10 +517,12 @@ export default function SettingsPage() {
         ugc_avatar_id: formData.ugc_avatar_id,
         ugc_voice_id: formData.ugc_voice_id,
         tts_enabled: formData.tts_enabled,
-        tts_engine: formData.tts_engine,
+        default_tts_engine: formData.default_tts_engine,
         tts_voice_id: formData.tts_voice_id,
         bgm_enabled: formData.bgm_enabled,
+        default_bgm_engine: formData.default_bgm_engine,
         bgm_style: formData.bgm_style,
+        default_stt_engine: formData.default_stt_engine,
         ollama_url: formData.ollama_url,
         comfyui_url: formData.comfyui_url,
         sadtalker_url: formData.sadtalker_url,
@@ -821,6 +827,57 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
+
+              {grouped.tts.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Text-to-Speech
+                  </h4>
+                  <div className="grid gap-3">
+                    {grouped.tts.map(({ provider, credential }) => (
+                      <ProviderCard
+                        key={provider.name}
+                        provider={provider}
+                        credential={credential}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {grouped.stt.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Speech-to-Text
+                  </h4>
+                  <div className="grid gap-3">
+                    {grouped.stt.map(({ provider, credential }) => (
+                      <ProviderCard
+                        key={provider.name}
+                        provider={provider}
+                        credential={credential}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {grouped.bgm.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Background Music
+                  </h4>
+                  <div className="grid gap-3">
+                    {grouped.bgm.map(({ provider, credential }) => (
+                      <ProviderCard
+                        key={provider.name}
+                        provider={provider}
+                        credential={credential}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1016,11 +1073,11 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label>TTS Engine</Label>
                 <Select
-                  value={formData.tts_engine}
+                  value={formData.default_tts_engine}
                   onValueChange={(value) =>
                     setFormData({
                       ...formData,
-                      tts_engine: value,
+                      default_tts_engine: value,
                       tts_voice_id: "",
                     })
                   }
@@ -1030,14 +1087,27 @@ export default function SettingsPage() {
                     <SelectValue placeholder="Select TTS engine" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="openai-tts">OpenAI TTS</SelectItem>
-                    <SelectItem value="edge-tts">Edge TTS (Free)</SelectItem>
-                    <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
+                    {grouped.tts.length > 0
+                      ? grouped.tts.map(({ provider, credential }) => (
+                          <SelectItem key={provider.name} value={provider.name}>
+                            <span className="flex items-center gap-2">
+                              {provider.display_name}
+                              {credential?.is_configured && (
+                                <Check className="h-3 w-3 text-green-500" />
+                              )}
+                            </span>
+                          </SelectItem>
+                        ))
+                      : [
+                          <SelectItem key="openai-tts" value="openai-tts">OpenAI TTS</SelectItem>,
+                          <SelectItem key="edge-tts" value="edge-tts">Edge TTS (Free)</SelectItem>,
+                          <SelectItem key="elevenlabs" value="elevenlabs">ElevenLabs</SelectItem>,
+                        ]}
                   </SelectContent>
                 </Select>
               </div>
 
-              {formData.tts_enabled && formData.tts_engine ? (
+              {formData.tts_enabled && formData.default_tts_engine ? (
                 <div className="space-y-2">
                   <Label>Voice</Label>
                   {ttsVoicesLoading ? (
@@ -1090,6 +1160,37 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
+                <Label>BGM Engine</Label>
+                <Select
+                  value={formData.default_bgm_engine}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, default_bgm_engine: value })
+                  }
+                  disabled={!formData.bgm_enabled}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select BGM engine" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {grouped.bgm.length > 0
+                      ? grouped.bgm.map(({ provider, credential }) => (
+                          <SelectItem key={provider.name} value={provider.name}>
+                            <span className="flex items-center gap-2">
+                              {provider.display_name}
+                              {credential?.is_configured && (
+                                <Check className="h-3 w-3 text-green-500" />
+                              )}
+                            </span>
+                          </SelectItem>
+                        ))
+                      : [
+                          <SelectItem key="static-bgm" value="static-bgm">Static BGM</SelectItem>,
+                        ]}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label>BGM Style</Label>
                 <Select
                   value={formData.bgm_style}
@@ -1107,6 +1208,46 @@ export default function SettingsPage() {
                     <SelectItem value="emotional">Emotional</SelectItem>
                     <SelectItem value="minimal">Minimal</SelectItem>
                     <SelectItem value="energetic">Energetic</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>STT Settings</CardTitle>
+              <CardDescription>
+                Select the speech-to-text engine for transcription tasks.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>STT Engine</Label>
+                <Select
+                  value={formData.default_stt_engine}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, default_stt_engine: value })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select STT engine" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {grouped.stt.length > 0
+                      ? grouped.stt.map(({ provider, credential }) => (
+                          <SelectItem key={provider.name} value={provider.name}>
+                            <span className="flex items-center gap-2">
+                              {provider.display_name}
+                              {credential?.is_configured && (
+                                <Check className="h-3 w-3 text-green-500" />
+                              )}
+                            </span>
+                          </SelectItem>
+                        ))
+                      : [
+                          <SelectItem key="openai-stt" value="openai-stt">OpenAI Whisper</SelectItem>,
+                        ]}
                   </SelectContent>
                 </Select>
               </div>

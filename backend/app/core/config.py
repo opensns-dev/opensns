@@ -82,6 +82,9 @@ class Settings(BaseSettings):
     HEYGEN_API_KEY: str | None = None
     DID_API_KEY: str | None = None
     SADTALKER_URL: str | None = None
+    ELEVENLABS_API_KEY: str | None = None
+    MUBERT_ACCESS_TOKEN: str | None = None
+    MUBERT_CUSTOMER_ID: str | None = None
 
     FACEBOOK_APP_ID: str = ""
     FACEBOOK_APP_SECRET: str = ""
@@ -124,6 +127,9 @@ class Settings(BaseSettings):
     )
     DEFAULT_IMAGE_ENGINE: str = "fal"  # fal, flux-pro, openrouter-image, openai-image, replicate, together, stability, bfl, leonardo, ideogram, comfyui
     DEFAULT_VIDEO_ENGINE: str = "fal-video"
+    DEFAULT_TTS_ENGINE: str = "edge-tts"  # openai-tts, elevenlabs-tts, edge-tts
+    DEFAULT_STT_ENGINE: str = "openai-stt"  # openai-stt
+    DEFAULT_MUSIC_ENGINE: str = "static-bgm"  # static-bgm, lyria, elevenlabs-music, mubert
 
 
 def get_settings() -> Settings:

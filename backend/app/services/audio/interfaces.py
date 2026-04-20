@@ -104,3 +104,41 @@ class BaseMusicAdapter(ABC):
     async def list_styles(self) -> List[str]:
         """List available music styles. Override in subclasses."""
         return []
+
+
+class STTSegment(BaseModel):
+    """A single transcription segment with timestamps."""
+
+    start: float
+    end: float
+    text: str
+
+
+class STTRequest(BaseModel):
+    """Request for speech-to-text transcription."""
+
+    audio_path: str
+    language: str = "ko"
+    response_format: str = "verbose_json"
+
+
+class STTResult(BaseModel):
+    """Result from STT transcription."""
+
+    text: str = ""
+    segments: List[STTSegment] = []
+    duration: float = 0.0
+    metadata: Dict[str, Any] = {}
+
+
+class BaseSTTAdapter(ABC):
+    """Abstract base class for Speech-to-Text adapters."""
+
+    @abstractmethod
+    async def transcribe(self, request: STTRequest) -> STTResult:
+        """Transcribe audio file to text with segments."""
+        pass
+
+    async def supported_languages(self) -> List[str]:
+        """List supported languages. Override in subclasses."""
+        return []
