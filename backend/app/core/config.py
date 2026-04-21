@@ -123,13 +123,13 @@ class Settings(BaseSettings):
         return v
 
     DEFAULT_LLM_ENGINE: str = (
-        "openai"  # openai, openrouter, anthropic, gemini, groq, ollama
+        "gemini"  # openai, openrouter, anthropic, gemini, groq, ollama
     )
-    DEFAULT_IMAGE_ENGINE: str = "fal"  # fal, flux-pro, openrouter-image, openai-image, replicate, together, stability, bfl, leonardo, ideogram, comfyui
-    DEFAULT_VIDEO_ENGINE: str = "fal-video"
-    DEFAULT_TTS_ENGINE: str = "edge-tts"  # openai-tts, elevenlabs-tts, edge-tts
-    DEFAULT_STT_ENGINE: str = "openai-stt"  # openai-stt
-    DEFAULT_MUSIC_ENGINE: str = "static-bgm"  # static-bgm, lyria, elevenlabs-music, mubert
+    DEFAULT_IMAGE_ENGINE: str = "gemini-image"  # gemini-image, fal, flux-pro, openrouter-image, openai-image, replicate, together, stability, bfl, leonardo, ideogram, comfyui
+    DEFAULT_VIDEO_ENGINE: str = "gemini-video"  # gemini-video, fal-video, runway, comfyui-video
+    DEFAULT_TTS_ENGINE: str = "gemini-tts"  # gemini-tts, openai-tts, elevenlabs, edge-tts
+    DEFAULT_STT_ENGINE: str = "gemini-stt"  # gemini-stt, openai-stt
+    DEFAULT_MUSIC_ENGINE: str = "lyria"  # lyria, static-bgm, elevenlabs-music, mubert
 
 
 def get_settings() -> Settings:

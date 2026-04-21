@@ -28,6 +28,10 @@ from app.services.audio.bgm import StaticBGMAdapter
 from app.services.audio.lyria_adapter import LyriaAdapter
 from app.services.audio.elevenlabs_music_adapter import ElevenLabsMusicAdapter
 from app.services.audio.mubert_adapter import MubertAdapter
+from app.services.image.gemini_image_adapter import GeminiImageAdapter
+from app.services.video.gemini_video_adapter import GeminiVideoAdapter
+from app.services.audio.gemini_tts_adapter import GeminiTTSAdapter
+from app.services.audio.gemini_stt_adapter import GeminiSTTAdapter
 from app.core.config import settings
 
 
@@ -90,6 +94,10 @@ def register_engines():
         "ideogram",
         lambda: IdeogramAdapter(api_key=settings.IDEOGRAM_API_KEY),
     )
+    engine_registry.register_image_engine(
+        "gemini-image",
+        lambda: GeminiImageAdapter(api_key=settings.GOOGLE_API_KEY),
+    )
 
     engine_registry.register_video_engine(
         "fal-video", lambda: FalVideoAdapter(api_key=settings.FAL_KEY)
@@ -109,6 +117,10 @@ def register_engines():
     engine_registry.register_video_engine(
         "sadtalker", lambda: SadTalkerAdapter(endpoint_url=settings.SADTALKER_URL)
     )
+    engine_registry.register_video_engine(
+        "gemini-video",
+        lambda: GeminiVideoAdapter(api_key=settings.GOOGLE_API_KEY),
+    )
 
     # TTS Engines
     engine_registry.register_tts_engine(
@@ -118,9 +130,17 @@ def register_engines():
         "elevenlabs", lambda: ElevenLabsTTSAdapter(api_key=settings.ELEVENLABS_API_KEY)
     )
     engine_registry.register_tts_engine("edge-tts", EdgeTTSAdapter)
+    engine_registry.register_tts_engine(
+        "gemini-tts",
+        lambda: GeminiTTSAdapter(api_key=settings.GOOGLE_API_KEY),
+    )
 
     engine_registry.register_stt_engine(
         "openai-stt", lambda: OpenAISTTAdapter(api_key=settings.OPENAI_API_KEY)
+    )
+    engine_registry.register_stt_engine(
+        "gemini-stt",
+        lambda: GeminiSTTAdapter(api_key=settings.GOOGLE_API_KEY),
     )
 
     engine_registry.register_bgm_engine("static-bgm", StaticBGMAdapter)

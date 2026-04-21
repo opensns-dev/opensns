@@ -203,6 +203,16 @@ PROVIDER_MANIFEST: dict[str, ProviderRegistryItem] = {
         requires_url=False,
         docs_url="https://ideogram.ai/manage-api",
     ),
+    "gemini-image": ProviderRegistryItem(
+        provider_type=ProviderType.IMAGE,
+        provider_name="gemini-image",
+        display_name="Google Imagen 4",
+        description="Photorealistic image generation via Imagen 4",
+        requires_key=True,
+        requires_url=False,
+        shared_key_provider="gemini",
+        docs_url="https://ai.google.dev/gemini-api/docs/imagen",
+    ),
     # Video Providers
     "fal-video": ProviderRegistryItem(
         provider_type=ProviderType.VIDEO,
@@ -232,6 +242,16 @@ PROVIDER_MANIFEST: dict[str, ProviderRegistryItem] = {
         requires_url=True,
         shared_url_provider="comfyui",
         docs_url="https://github.com/comfyanonymous/ComfyUI",
+    ),
+    "gemini-video": ProviderRegistryItem(
+        provider_type=ProviderType.VIDEO,
+        provider_name="gemini-video",
+        display_name="Google Veo 3",
+        description="AI video generation via Veo 3 (8s clips)",
+        requires_key=True,
+        requires_url=False,
+        shared_key_provider="gemini",
+        docs_url="https://ai.google.dev/gemini-api/docs/video",
     ),
     # UGC Video Providers
     "heygen": ProviderRegistryItem(
@@ -299,6 +319,16 @@ PROVIDER_MANIFEST: dict[str, ProviderRegistryItem] = {
         requires_key=False,
         requires_url=False,
     ),
+    "gemini-tts": ProviderRegistryItem(
+        provider_type=ProviderType.TTS,
+        provider_name="gemini-tts",
+        display_name="Google Gemini TTS",
+        description="High-quality text-to-speech with 30 voices via Gemini API",
+        requires_key=True,
+        requires_url=False,
+        shared_key_provider="gemini",
+        docs_url="https://ai.google.dev/gemini-api/docs/speech-generation",
+    ),
     # STT Providers
     "openai-stt": ProviderRegistryItem(
         provider_type=ProviderType.STT,
@@ -309,6 +339,16 @@ PROVIDER_MANIFEST: dict[str, ProviderRegistryItem] = {
         requires_url=False,
         shared_key_provider="openai",
         docs_url="https://platform.openai.com/docs/guides/speech-to-text",
+    ),
+    "gemini-stt": ProviderRegistryItem(
+        provider_type=ProviderType.STT,
+        provider_name="gemini-stt",
+        display_name="Google Gemini STT",
+        description="Speech-to-text transcription via Gemini audio understanding",
+        requires_key=True,
+        requires_url=False,
+        shared_key_provider="gemini",
+        docs_url="https://ai.google.dev/gemini-api/docs/audio",
     ),
     # BGM Providers
     "static-bgm": ProviderRegistryItem(
@@ -369,14 +409,14 @@ def list_providers(
 def get_default_provider(provider_type: ProviderType) -> Optional[str]:
     """Get the default provider name for a given type."""
     defaults = {
-        ProviderType.LLM: "openai",
-        ProviderType.IMAGE: "fal",
-        ProviderType.VIDEO: "fal-video",
+        ProviderType.LLM: "gemini",
+        ProviderType.IMAGE: "gemini-image",
+        ProviderType.VIDEO: "gemini-video",
         ProviderType.UGC: None,
         ProviderType.SCRAPER: "firecrawl",
-        ProviderType.TTS: "openai-tts",
-        ProviderType.STT: "openai-stt",
-        ProviderType.BGM: "static-bgm",
+        ProviderType.TTS: "gemini-tts",
+        ProviderType.STT: "gemini-stt",
+        ProviderType.BGM: "lyria",
     }
     return defaults.get(provider_type)
 
