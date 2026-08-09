@@ -1,9 +1,10 @@
 from datetime import datetime, UTC
 from enum import Enum
+import json
 from typing import List, Optional
 from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy import UniqueConstraint
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 def utc_now() -> datetime:
@@ -350,6 +351,15 @@ PLAN_LIMITS = {
     },
 }
 
+# Autopilot schedule limits per plan tier
+AUTOPILOT_SCHEDULE_LIMITS = {
+    PlanTier.FREE: 0,
+    PlanTier.BASIC: 1,
+    PlanTier.BYOK: 3,
+    PlanTier.PRO: 3,
+    PlanTier.ULTRA: 999,  # effectively unlimited
+}
+
 
 class Subscription(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -402,7 +412,7 @@ class UsageTracking(SQLModel, table=True):
     user: Optional["User"] = Relationship(back_populates="usage")
 
     def reset_period(
-        self, new_period_start: datetime = None, rollover_credits: int = 0
+        self, new_period_start: Optional[datetime] = None, rollover_credits: int = 0
     ):
         self.period_start = new_period_start or utc_now()
         self.rolled_over_credits = rollover_credits
@@ -1050,6 +1060,218 @@ class CalendarView(BaseModel):
     total_scheduled: int
     total_published: int
     total_failed: int
+
+
+# ============ Autopilot Models ============
+
+
+class AutopilotCadence(str, Enum):
+    DAILY = "DAILY"
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"
+
+
+class AutopilotRunStatus(str, Enum):
+    RUNNING = "RUNNING"
+    AWAITING_APPROVAL = "AWAITING_APPROVAL"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    EXPIRED = "EXPIRED"
+    SKIPPED = "SKIPPED"
+
+
+class AutopilotRule(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+
+    # Schedule settings
+    enabled: bool = Field(default=True)
+    timezone: str = Field(default="Asia/Seoul")
+    cadence: AutopilotCadence
+    days_of_week: Optional[str] = None  # JSON: [0,2,4] where 0=Monday
+    time_of_day: str = Field(default="09:00")  # HH:MM
+
+    # Execution tracking
+    next_run_at: datetime = Field(index=True)
+    last_run_at: Optional[datetime] = None
+    run_count: int = Field(default=0)
+    consecutive_failures: int = Field(default=0)
+    last_failure_reason: Optional[str] = None
+    locked_until: Optional[datetime] = None  # Lock TTL 30min for idempotency
+
+    # Generation settings
+    product_url: str
+    brand_kit_id: Optional[int] = None
+    platform_targets: str = Field(default='["instagram"]')  # JSON array
+    asset_types: str = Field(default='["image"]')  # JSON array, v1: image only
+    num_variations: int = Field(default=3)
+
+    # v2: Auto-publish settings
+    auto_publish: bool = Field(default=False)
+    publish_connection_ids: Optional[str] = None  # JSON array of PublishConnection IDs
+
+    # Workflow settings
+    requires_approval: bool = Field(default=True)  # v1: always True
+    approval_timeout_hours: int = Field(default=48)
+
+    # Meta
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
+class AutopilotRunLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    rule_id: int = Field(foreign_key="autopilotrule.id", index=True)
+    campaign_id: Optional[int] = Field(default=None, foreign_key="campaign.id")
+    status: AutopilotRunStatus
+
+    started_at: datetime = Field(default_factory=utc_now)
+    completed_at: Optional[datetime] = None
+    error: Optional[str] = None
+    credits_estimated: int = Field(default=0)
+    credits_used: int = Field(default=0)
+    retry_count: int = Field(default=0)
+    publish_status: Optional[str] = None  # "pending", "published", "failed", "skipped"
+
+class NotificationType(str, Enum):
+    AUTOPILOT_COMPLETE = "AUTOPILOT_COMPLETE"
+    AUTOPILOT_FAILED = "AUTOPILOT_FAILED"
+    AUTOPILOT_DISABLED = "AUTOPILOT_DISABLED"
+    CREDITS_LOW = "CREDITS_LOW"
+    APPROVAL_NEEDED = "APPROVAL_NEEDED"
+    PUBLISH_COMPLETE = "PUBLISH_COMPLETE"
+    PUBLISH_FAILED = "PUBLISH_FAILED"
+
+
+class Notification(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    type: NotificationType
+    title: str
+    message: str
+    is_read: bool = Field(default=False, index=True)
+    metadata_json: Optional[str] = None  # JSON for extra context (campaign_id, rule_id, etc.)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
+
+
+class AutopilotRuleCreate(BaseModel):
+    product_url: str
+    platform_targets: List[str] = ["instagram"]
+    cadence: AutopilotCadence
+    days_of_week: Optional[List[int]] = None
+    time_of_day: str = "09:00"
+    timezone: str = "Asia/Seoul"
+    num_variations: int = 3
+    brand_kit_id: Optional[int] = None
+    asset_types: Optional[List[str]] = None
+    requires_approval: Optional[bool] = None
+    auto_publish: bool = False
+    publish_connection_ids: Optional[List[int]] = None
+
+
+class AutopilotRuleUpdate(BaseModel):
+    platform_targets: Optional[List[str]] = None
+    cadence: Optional[AutopilotCadence] = None
+    days_of_week: Optional[List[int]] = None
+    time_of_day: Optional[str] = None
+    timezone: Optional[str] = None
+    num_variations: Optional[int] = None
+    brand_kit_id: Optional[int] = None
+    product_url: Optional[str] = None
+    asset_types: Optional[List[str]] = None
+    auto_publish: Optional[bool] = None
+    publish_connection_ids: Optional[List[int]] = None
+    requires_approval: Optional[bool] = None
+
+
+class AutopilotRuleResponse(BaseModel):
+    id: int
+    user_id: int
+    enabled: bool
+    timezone: str
+    cadence: str
+    days_of_week: Optional[List[int]]
+    time_of_day: str
+    next_run_at: datetime
+    last_run_at: Optional[datetime]
+    run_count: int
+    consecutive_failures: int
+    last_failure_reason: Optional[str]
+    product_url: str
+    brand_kit_id: Optional[int]
+    platform_targets: List[str]
+    asset_types: List[str]
+    num_variations: int
+    auto_publish: bool
+    publish_connection_ids: Optional[List[int]]
+    requires_approval: bool
+    approval_timeout_hours: int
+    created_at: datetime
+    updated_at: datetime
+
+    @field_validator("days_of_week", mode="before")
+    @classmethod
+    def parse_days_of_week(cls, v):
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
+
+    @field_validator("platform_targets", "asset_types", mode="before")
+    @classmethod
+    def parse_json_list(cls, v):
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
+
+    @field_validator("publish_connection_ids", mode="before")
+    @classmethod
+    def parse_connection_ids(cls, v):
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AutopilotRunLogResponse(BaseModel):
+    id: int
+    rule_id: int
+    campaign_id: Optional[int]
+    status: str
+    started_at: datetime
+    completed_at: Optional[datetime]
+    error: Optional[str]
+    credits_estimated: int
+    credits_used: int
+    retry_count: int
+    publish_status: Optional[str]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class NotificationResponse(BaseModel):
+    id: int
+    user_id: int
+    type: str
+    title: str
+    message: str
+    is_read: bool
+    metadata_json: Optional[dict]
+    created_at: datetime
+    updated_at: datetime
+
+    @field_validator("metadata_json", mode="before")
+    @classmethod
+    def parse_metadata(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (TypeError, json.JSONDecodeError):
+                return None
+        return v
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ============ Custom Voice / Avatar ============

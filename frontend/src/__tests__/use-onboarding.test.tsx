@@ -2,9 +2,10 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { renderHook } from '@testing-library/react'
+import { QueryClient, QueryClientProvider, type UseQueryResult } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
+import type { Campaign } from '@/types'
 
 vi.mock('@/hooks/use-settings', () => ({
   useSettings: vi.fn(),
@@ -33,6 +34,10 @@ const createWrapper = () => {
   return Wrapper
 }
 
+const mockCampaignsQuery = (
+  value: Partial<UseQueryResult<Campaign[], Error>>
+): UseQueryResult<Campaign[], Error> => value as unknown as UseQueryResult<Campaign[], Error>
+
 describe('useOnboarding', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -44,10 +49,12 @@ describe('useOnboarding', () => {
       isLoading: true,
     } as ReturnType<typeof useSettings>)
 
-    ;(useCampaigns as Mock).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as ReturnType<typeof useCampaigns>)
+    ;(useCampaigns as Mock).mockReturnValue(
+      mockCampaignsQuery({
+        data: [],
+        isLoading: false,
+      })
+    )
 
     const { result } = renderHook(() => useOnboarding(), {
       wrapper: createWrapper(),
@@ -64,10 +71,12 @@ describe('useOnboarding', () => {
       isLoading: false,
     } as ReturnType<typeof useSettings>)
 
-    ;(useCampaigns as Mock).mockReturnValue({
-      data: undefined,
-      isLoading: true,
-    } as ReturnType<typeof useCampaigns>)
+    ;(useCampaigns as Mock).mockReturnValue(
+      mockCampaignsQuery({
+        data: undefined,
+        isLoading: true,
+      })
+    )
 
     const { result } = renderHook(() => useOnboarding(), {
       wrapper: createWrapper(),
@@ -84,10 +93,12 @@ describe('useOnboarding', () => {
       isLoading: false,
     } as ReturnType<typeof useSettings>)
 
-    ;(useCampaigns as Mock).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as ReturnType<typeof useCampaigns>)
+    ;(useCampaigns as Mock).mockReturnValue(
+      mockCampaignsQuery({
+        data: [],
+        isLoading: false,
+      })
+    )
 
     const { result } = renderHook(() => useOnboarding(), {
       wrapper: createWrapper(),
@@ -104,10 +115,12 @@ describe('useOnboarding', () => {
       isLoading: false,
     } as ReturnType<typeof useSettings>)
 
-    ;(useCampaigns as Mock).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as ReturnType<typeof useCampaigns>)
+    ;(useCampaigns as Mock).mockReturnValue(
+      mockCampaignsQuery({
+        data: [],
+        isLoading: false,
+      })
+    )
 
     const { result } = renderHook(() => useOnboarding(), {
       wrapper: createWrapper(),
@@ -124,10 +137,12 @@ describe('useOnboarding', () => {
       isLoading: false,
     } as ReturnType<typeof useSettings>)
 
-    ;(useCampaigns as Mock).mockReturnValue({
-      data: [{ id: 1, title: 'Campaign 1', status: 'PENDING', product_url: 'https://example.com', created_at: '2024-01-01', user_id: 1 }],
-      isLoading: false,
-    } as ReturnType<typeof useCampaigns>)
+    ;(useCampaigns as Mock).mockReturnValue(
+      mockCampaignsQuery({
+        data: [{ id: 1, title: 'Campaign 1', description: null, status: 'PENDING', product_url: 'https://example.com', created_at: '2024-01-01', user_id: 1 }],
+        isLoading: false,
+      })
+    )
 
     const { result } = renderHook(() => useOnboarding(), {
       wrapper: createWrapper(),

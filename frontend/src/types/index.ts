@@ -501,6 +501,101 @@ export interface CalendarView {
   total_failed: number;
 }
 
+// ============ Autopilot Types ============
+
+export type AutopilotCadence = "DAILY" | "WEEKLY" | "MONTHLY";
+export type AutopilotRunStatus =
+  | "RUNNING"
+  | "AWAITING_APPROVAL"
+  | "COMPLETED"
+  | "FAILED"
+  | "EXPIRED"
+  | "SKIPPED";
+
+export interface AutopilotRule {
+  id: number;
+  user_id: number;
+  enabled: boolean;
+  timezone: string;
+  cadence: string;
+  days_of_week: number[] | null;
+  time_of_day: string;
+  next_run_at: string;
+  last_run_at: string | null;
+  run_count: number;
+  consecutive_failures: number;
+  last_failure_reason: string | null;
+  product_url: string;
+  brand_kit_id: number | null;
+  platform_targets: string[];
+  asset_types: string[];
+  num_variations: number;
+  auto_publish: boolean;
+  publish_connection_ids: number[] | null;
+  requires_approval: boolean;
+  approval_timeout_hours: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AutopilotRunLog {
+  id: number;
+  rule_id: number;
+  campaign_id: number | null;
+  status: string;
+  started_at: string;
+  completed_at: string | null;
+  error: string | null;
+  credits_estimated: number;
+  credits_used: number;
+  retry_count: number;
+  publish_status: string | null;
+}
+
+export interface AutopilotRuleCreate {
+  product_url: string;
+  platform_targets?: string[];
+  cadence: AutopilotCadence;
+  days_of_week?: number[] | null;
+  time_of_day?: string;
+  timezone?: string;
+  num_variations?: number;
+  brand_kit_id?: number | null;
+  asset_types?: string[];
+  requires_approval?: boolean;
+  auto_publish?: boolean;
+  publish_connection_ids?: number[];
+}
+
+export interface AutopilotRuleUpdate {
+  platform_targets?: string[];
+  cadence?: AutopilotCadence;
+  days_of_week?: number[] | null;
+  time_of_day?: string;
+  timezone?: string;
+  num_variations?: number;
+  brand_kit_id?: number | null;
+  product_url?: string;
+  asset_types?: string[];
+  auto_publish?: boolean;
+  publish_connection_ids?: number[];
+  requires_approval?: boolean;
+}
+
+export type NotificationType = "AUTOPILOT_COMPLETE" | "AUTOPILOT_FAILED" | "AUTOPILOT_DISABLED" | "CREDITS_LOW" | "APPROVAL_NEEDED" | "PUBLISH_COMPLETE" | "PUBLISH_FAILED";
+
+export interface Notification {
+  id: number;
+  user_id: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  is_read: boolean;
+  metadata_json: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // ============ Custom Voice / Avatar Types ============
 
 export type VoiceCloneStatus = "PENDING" | "PROCESSING" | "READY" | "FAILED";

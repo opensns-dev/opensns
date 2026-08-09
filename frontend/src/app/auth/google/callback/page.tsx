@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, setRefreshToken, setToken } from "@/lib/api";
 import {
   Card,
   CardDescription,
@@ -39,9 +39,14 @@ function GoogleCallbackContent() {
 
     const handleCallback = async () => {
       try {
-        await api.post(
+        const response = await api.post<{
+          access_token: string;
+          refresh_token: string;
+        }>(
           `/auth/google/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`
         );
+        setToken(response.data.access_token);
+        setRefreshToken(response.data.refresh_token);
         router.push("/dashboard/");
       } catch (err: unknown) {
         setError(

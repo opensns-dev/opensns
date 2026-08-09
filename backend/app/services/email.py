@@ -117,3 +117,72 @@ def send_credits_exhausted(
     """
 
     return send_email(to, subject, html)
+
+
+def send_autopilot_approval_needed(
+    to: str,
+    user_name: str,
+    rule_product_url: str,
+    campaign_id: int,
+) -> bool:
+    subject = "🤖 Your autopilot campaign is ready for review"
+    html = f"""
+    <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #3b82f6;">Autopilot Campaign Ready</h2>
+        <p>Hi {user_name},</p>
+        <p>Your autopilot schedule just generated new ad creatives for <strong>{rule_product_url}</strong>.</p>
+        <div style="background: #eff6ff; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p style="margin: 0;">Review and approve them to start using in your campaigns.</p>
+        </div>
+        <a href="{settings.FRONTEND_URL}/campaigns/{campaign_id}" style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Review Campaign</a>
+        <p style="color: #666; font-size: 14px; margin-top: 24px;">— The OpenSNS Team</p>
+    </div>
+    """
+    return send_email(to, subject, html)
+
+
+
+def send_autopilot_run_failed(
+    to: str,
+    user_name: str,
+    rule_product_url: str,
+    error_reason: str,
+) -> bool:
+    subject = "⚠️ Autopilot run failed"
+    html = f"""
+    <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #f59e0b;">Autopilot Run Failed</h2>
+        <p>Hi {user_name},</p>
+        <p>Your autopilot schedule for <strong>{rule_product_url}</strong> encountered an error:</p>
+        <div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p style="margin: 0; font-family: monospace; font-size: 13px;">{error_reason}</p>
+        </div>
+        <p>The schedule will retry on the next scheduled time. If this keeps happening, check your product URL and settings.</p>
+        <a href="{settings.FRONTEND_URL}/autopilot" style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">View Autopilot Settings</a>
+        <p style="color: #666; font-size: 14px; margin-top: 24px;">— The OpenSNS Team</p>
+    </div>
+    """
+    return send_email(to, subject, html)
+
+
+
+def send_autopilot_credits_insufficient(
+    to: str,
+    user_name: str,
+    rule_product_url: str,
+    credits_needed: int,
+) -> bool:
+    subject = "🛑 Autopilot paused — not enough credits"
+    html = f"""
+    <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #ef4444;">Autopilot Paused</h2>
+        <p>Hi {user_name},</p>
+        <p>Your autopilot schedule for <strong>{rule_product_url}</strong> was skipped because you don't have enough credits ({credits_needed} needed).</p>
+        <div style="background: #fef2f2; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p style="margin: 0;"><strong>Upgrade to keep your autopilot running without interruption.</strong></p>
+        </div>
+        <a href="{settings.FRONTEND_URL}/settings/billing" style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Upgrade Plan</a>
+        <p style="color: #666; font-size: 14px; margin-top: 24px;">— The OpenSNS Team</p>
+    </div>
+    """
+    return send_email(to, subject, html)

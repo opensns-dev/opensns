@@ -122,6 +122,10 @@ class Settings(BaseSettings):
                 )
         return v
 
+    # Autopilot
+    AUTOPILOT_ENABLED: bool = False
+    INTERNAL_API_KEY: str = ""
+
     DEFAULT_LLM_ENGINE: str = (
         "gemini"  # openai, openrouter, anthropic, gemini, groq, ollama
     )
@@ -138,7 +142,7 @@ def get_settings() -> Settings:
     This allows imports to succeed even without env vars set,
     while still validating at runtime when settings are accessed.
     """
-    return Settings()
+    return Settings()  # pyright: ignore[reportCallIssue]
 
 
 # For backwards compatibility - will raise ValidationError if env vars are missing

@@ -16,6 +16,8 @@ from app.models.models import (
     User,
     Asset,
     UserSettings,
+    AutopilotRunLog,
+    AutopilotRunStatus,
 )
 from app.services.pipeline import run_campaign_pipeline, approve_and_resume
 from app.core.auth import get_current_user
@@ -125,7 +127,16 @@ async def approve_campaign(
     if campaign.status != CampaignStatus.AWAITING_APPROVAL:
         raise HTTPException(status_code=400, detail="Campaign is not awaiting approval")
 
-    background_tasks.add_task(approve_and_resume, campaign_id)
+    run_log = session.exec(
+        select(AutopilotRunLog).where(
+            AutopilotRunLog.campaign_id == campaign_id,
+            AutopilotRunLog.status == AutopilotRunStatus.AWAITING_APPROVAL,
+        )
+    ).first()
+
+    background_tasks.add_task(
+        approve_and_resume, campaign_id, autopilot_run_log_id=run_log.id if run_log else None
+    )
 
     return campaign
 

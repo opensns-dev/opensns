@@ -5,6 +5,8 @@ import os
 logger = logging.getLogger(__name__)
 
 from app.models.models import (
+    AutopilotRule,
+    AutopilotRunLog,
     Campaign,
     CampaignStatus,
     AgentLog,
@@ -130,7 +132,7 @@ _STEP_TO_STATUS = {
 
 
 def _make_step_callback(campaign_id: int):
-    last_status = [None]
+    last_status: list[CampaignStatus | None] = [None]
 
     async def on_step_change(step: str):
         target_status = _STEP_TO_STATUS.get(step)
@@ -152,13 +154,29 @@ def _make_step_callback(campaign_id: int):
     return on_step_change
 
 
-async def run_campaign_pipeline(campaign_id: int, requires_approval: bool = False):
+async def run_campaign_pipeline(
+    campaign_id: int,
+    requires_approval: bool = False,
+    autopilot_run_log_id: int | None = None,
+):
     if not is_storage_configured():
         raise RuntimeError(
             "Object storage is not configured. Set STORAGE_ENDPOINT_URL, "
             "STORAGE_ACCESS_KEY_ID, STORAGE_SECRET_ACCESS_KEY, and "
             "STORAGE_PUBLIC_URL environment variables."
         )
+
+    def _complete_autopilot_run(status_val, credits: int = 0):
+        if autopilot_run_log_id is None:
+            return
+        from app.services.autopilot import complete_run as _complete_run
+
+        try:
+            with Session(engine) as s:
+                _complete_run(s, autopilot_run_log_id, campaign_id, status_val, credits)
+        except Exception:
+            logger.exception("Failed to complete autopilot run log %s", autopilot_run_log_id)
+
     with Session(engine) as session:
         campaign = session.get(Campaign, campaign_id)
         if not campaign:
@@ -221,6 +239,9 @@ async def run_campaign_pipeline(campaign_id: int, requires_approval: bool = Fals
                 campaign.status = CampaignStatus.FAILED
                 session.add(campaign)
                 session.commit()
+            from app.models.models import AutopilotRunStatus as _ARS
+
+            _complete_autopilot_run(_ARS.FAILED)
             await _log_and_broadcast(
                 session, campaign_id, "System", f"Workflow error: {e}", "ERROR"
             )
@@ -234,6 +255,9 @@ async def run_campaign_pipeline(campaign_id: int, requires_approval: bool = Fals
                 campaign.status = CampaignStatus.AWAITING_APPROVAL
                 session.add(campaign)
                 session.commit()
+            from app.models.models import AutopilotRunStatus as _ARS
+
+            _complete_autopilot_run(_ARS.AWAITING_APPROVAL)
             await _log_and_broadcast(
                 session,
                 campaign_id,
@@ -243,17 +267,65 @@ async def run_campaign_pipeline(campaign_id: int, requires_approval: bool = Fals
         return final_state
 
     await _save_final_state(campaign_id, final_state)
+    # Compute credits used for autopilot run log
+    _credits = 0
+    from app.models.models import CREDIT_COSTS
+
+    _credits += len(
+        [asset for asset in final_state.get("generated_images", []) if not asset.metadata.get("fallback", False)]
+    ) * CREDIT_COSTS.get("image", 1)
+    _credits += len(
+        [asset for asset in final_state.get("generated_videos", []) if not asset.metadata.get("fallback", False)]
+    ) * CREDIT_COSTS.get("video", 12)
+    _credits += len(
+        [asset for asset in final_state.get("generated_ugc_videos", []) if not asset.metadata.get("fallback", False) and asset.content]
+    ) * CREDIT_COSTS.get("video", 12)
+    _credits += len(
+        [tts for tts in final_state.get("generated_tts", []) if tts.content and tts.content != "tts_audio_data"]
+    ) * CREDIT_COSTS.get("tts", 2)
+
+    # Check if pipeline ended with error in final_state
+    from app.models.models import AutopilotRunStatus as _ARS
+
+    if final_state.get("error"):
+        _complete_autopilot_run(_ARS.FAILED)
+    else:
+        _complete_autopilot_run(_ARS.COMPLETED, _credits)
+
+        if autopilot_run_log_id is not None:
+            try:
+                with Session(engine) as _pub_session:
+                    _run_log = _pub_session.get(AutopilotRunLog, autopilot_run_log_id)
+                    if _run_log:
+                        _rule = _pub_session.get(AutopilotRule, _run_log.rule_id)
+                        if _rule and _rule.auto_publish and _rule.id is not None:
+                            from app.services.autopilot import auto_publish_for_autopilot
+                            await auto_publish_for_autopilot(campaign_id, _rule.id)
+            except Exception:
+                logger.exception("Auto-publish failed for autopilot run %s", autopilot_run_log_id)
     cleanup_temp_files(campaign_id)
     return final_state
 
 
-async def approve_and_resume(campaign_id: int):
+async def approve_and_resume(campaign_id: int, autopilot_run_log_id: int | None = None):
     if not is_storage_configured():
         raise RuntimeError(
             "Object storage is not configured. Set STORAGE_ENDPOINT_URL, "
             "STORAGE_ACCESS_KEY_ID, STORAGE_SECRET_ACCESS_KEY, and "
             "STORAGE_PUBLIC_URL environment variables."
         )
+
+    def _complete_autopilot_run(status_val, credits: int = 0):
+        if autopilot_run_log_id is None:
+            return
+        from app.services.autopilot import complete_run as _complete_run
+
+        try:
+            with Session(engine) as s:
+                _complete_run(s, autopilot_run_log_id, campaign_id, status_val, credits)
+        except Exception:
+            logger.exception("Failed to complete autopilot run log %s", autopilot_run_log_id)
+
     with Session(engine) as session:
         campaign = session.get(Campaign, campaign_id)
         if campaign:
@@ -274,12 +346,51 @@ async def approve_and_resume(campaign_id: int):
                 campaign.status = CampaignStatus.FAILED
                 session.add(campaign)
                 session.commit()
+            from app.models.models import AutopilotRunStatus as _ARS
+
+            _complete_autopilot_run(_ARS.FAILED)
             await _log_and_broadcast(
                 session, campaign_id, "System", f"Resume error: {e}", "ERROR"
             )
         raise
 
     await _save_final_state(campaign_id, final_state)
+
+    _credits = 0
+    from app.models.models import CREDIT_COSTS
+
+    _credits += len(
+        [asset for asset in final_state.get("generated_images", []) if not asset.metadata.get("fallback", False)]
+    ) * CREDIT_COSTS.get("image", 1)
+    _credits += len(
+        [asset for asset in final_state.get("generated_videos", []) if not asset.metadata.get("fallback", False)]
+    ) * CREDIT_COSTS.get("video", 12)
+    _credits += len(
+        [asset for asset in final_state.get("generated_ugc_videos", []) if not asset.metadata.get("fallback", False) and asset.content]
+    ) * CREDIT_COSTS.get("video", 12)
+    _credits += len(
+        [tts for tts in final_state.get("generated_tts", []) if tts.content and tts.content != "tts_audio_data"]
+    ) * CREDIT_COSTS.get("tts", 2)
+
+    from app.models.models import AutopilotRunStatus as _ARS
+
+    if final_state.get("error"):
+        _complete_autopilot_run(_ARS.FAILED)
+    else:
+        _complete_autopilot_run(_ARS.COMPLETED, _credits)
+
+        if autopilot_run_log_id is not None:
+            try:
+                with Session(engine) as _pub_session:
+                    _run_log = _pub_session.get(AutopilotRunLog, autopilot_run_log_id)
+                    if _run_log:
+                        _rule = _pub_session.get(AutopilotRule, _run_log.rule_id)
+                        if _rule and _rule.auto_publish and _rule.id is not None:
+                            from app.services.autopilot import auto_publish_for_autopilot
+                            await auto_publish_for_autopilot(campaign_id, _rule.id)
+            except Exception:
+                logger.exception("Auto-publish failed for autopilot run %s", autopilot_run_log_id)
+
     cleanup_temp_files(campaign_id)
     return final_state
 

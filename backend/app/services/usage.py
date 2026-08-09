@@ -18,6 +18,8 @@ from app.models.models import (
 def get_or_create_subscription(session: Session, user: User) -> Subscription:
     if user.subscription:
         return user.subscription
+    if user.id is None:
+        raise ValueError("User must have an id to create a subscription")
     subscription = Subscription(user_id=user.id, tier=PlanTier.FREE)
     session.add(subscription)
     session.commit()
@@ -28,6 +30,8 @@ def get_or_create_subscription(session: Session, user: User) -> Subscription:
 def get_or_create_usage(session: Session, user: User) -> UsageTracking:
     if user.usage:
         return user.usage
+    if user.id is None:
+        raise ValueError("User must have an id to create usage tracking")
     usage = UsageTracking(user_id=user.id)
     session.add(usage)
     session.commit()
@@ -148,8 +152,8 @@ def use_credits(
     session: Session,
     user: User,
     credits: int,
-    resource_type: str = None,
-    campaign_id: int = None,
+    resource_type: str | None = None,
+    campaign_id: int | None = None,
 ) -> None:
     usage = get_or_create_usage(session, user)
     usage.credits_used += credits
@@ -161,6 +165,8 @@ def use_credits(
     usage.updated_at = utc_now()
     session.add(usage)
 
+    if user.id is None:
+        raise ValueError("User must have an id to log credit usage")
     log = CreditUsageLog(
         user_id=user.id,
         resource_type=resource_type or "unknown",
@@ -172,14 +178,14 @@ def use_credits(
 
 
 def use_image_credits(
-    session: Session, user: User, count: int = 1, campaign_id: int = None
+    session: Session, user: User, count: int = 1, campaign_id: int | None = None
 ) -> None:
     credits = count * CREDIT_COSTS["image"]
     use_credits(session, user, credits, "image", campaign_id)
 
 
 def use_video_credits(
-    session: Session, user: User, count: int = 1, campaign_id: int = None
+    session: Session, user: User, count: int = 1, campaign_id: int | None = None
 ) -> None:
     credits = count * CREDIT_COSTS["video"]
     use_credits(session, user, credits, "video", campaign_id)
@@ -201,7 +207,7 @@ def check_product_photo_credits(session: Session, user: User, count: int = 1) ->
 
 
 def use_product_photo_credits(
-    session: Session, user: User, count: int = 1, campaign_id: int = None
+    session: Session, user: User, count: int = 1, campaign_id: int | None = None
 ) -> None:
     credits = count * CREDIT_COSTS["product_photo"]
     use_credits(session, user, credits, "product_photo", campaign_id)
@@ -213,7 +219,7 @@ def check_tts_credits(session: Session, user: User, count: int = 1) -> None:
 
 
 def use_tts_credits(
-    session: Session, user: User, count: int = 1, campaign_id: int = None
+    session: Session, user: User, count: int = 1, campaign_id: int | None = None
 ) -> None:
     credits = count * CREDIT_COSTS["tts"]
     use_credits(session, user, credits, "tts", campaign_id)
@@ -227,9 +233,47 @@ def check_bgm_credits(session: Session, user: User, count: int = 1) -> None:
 
 
 def use_bgm_credits(
-    session: Session, user: User, count: int = 1, campaign_id: int = None
+    session: Session, user: User, count: int = 1, campaign_id: int | None = None
 ) -> None:
     """BGM is free but we log it for tracking."""
     credits = count * CREDIT_COSTS["bgm"]
     if credits > 0:
         use_credits(session, user, credits, "bgm", campaign_id)
+
+
+def estimate_workflow_credits(asset_types_json: str, num_variations: int) -> int:
+    """Estimate credits needed for an autopilot run. Returns conservative lower bound."""
+    import json
+    asset_types = json.loads(asset_types_json)
+    cost = 0
+    if "image" in asset_types:
+        cost += num_variations * CREDIT_COSTS["image"]
+    if "video" in asset_types:
+        cost += num_variations * CREDIT_COSTS["video"]
+    if "ugc" in asset_types:
+        cost += num_variations * CREDIT_COSTS["video"]  # UGC uses video credit cost
+    return cost
+
+
+def has_sufficient_credits(session: Session, user: User, credits_needed: int) -> bool:
+    """Non-throwing version of check_credits(). Returns True if user has enough credits."""
+    if _is_byok(session, user):
+        return True
+    subscription, usage, limits = get_user_limits(session, user)
+    credits_limit = limits["credits_per_month"]
+    bonus_credits = usage.bonus_credits or 0
+    rolled_over = usage.rolled_over_credits or 0
+    total_available = credits_limit + bonus_credits + rolled_over
+    credits_remaining = total_available - usage.credits_used
+    return credits_remaining >= credits_needed
+
+
+def get_remaining_credits(session: Session, user: User) -> int:
+    """Get remaining credits for nudge emails."""
+    if _is_byok(session, user):
+        return 999999  # effectively unlimited
+    subscription, usage, limits = get_user_limits(session, user)
+    credits_limit = limits["credits_per_month"]
+    bonus_credits = usage.bonus_credits or 0
+    rolled_over = usage.rolled_over_credits or 0
+    return credits_limit + bonus_credits + rolled_over - usage.credits_used

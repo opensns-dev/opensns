@@ -259,3 +259,115 @@ async def websocket_repurpose(
                 await websocket.send_json({"type": "pong"})
     except WebSocketDisconnect:
         repurpose_manager.disconnect(websocket, job_id)
+
+
+class AutopilotConnectionManager:
+    """Manages WebSocket connections for user-level autopilot events."""
+
+    def __init__(self):
+        # user_id -> list of connected websockets
+        self.active_connections: Dict[int, List[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, user_id: int):
+        await websocket.accept()
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = []
+        self.active_connections[user_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, user_id: int):
+        if user_id in self.active_connections:
+            if websocket in self.active_connections[user_id]:
+                self.active_connections[user_id].remove(websocket)
+            if not self.active_connections[user_id]:
+                del self.active_connections[user_id]
+
+    async def broadcast_to_user(self, user_id: int, message: dict):
+        if user_id in self.active_connections:
+            for connection in self.active_connections[user_id]:
+                try:
+                    await connection.send_json(message)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to send autopilot WS message to user {user_id}: {e}"
+                    )
+
+
+autopilot_manager = AutopilotConnectionManager()
+
+
+async def send_autopilot_event(
+    user_id: int,
+    event_type: str,
+    data: dict | None = None,
+):
+    """Broadcast autopilot event to connected user clients.
+
+    Event types:
+    - rule_executing: A rule started executing
+    - rule_completed: A rule finished successfully
+    - rule_failed: A rule execution failed
+    - notification_created: A new notification was created
+    """
+    message = {
+        "type": "autopilot_event",
+        "event": event_type,
+        "data": data or {},
+    }
+    await autopilot_manager.broadcast_to_user(user_id, message)
+
+
+@router.websocket("/autopilot")
+async def websocket_autopilot(
+    websocket: WebSocket,
+    token: Optional[str] = Query(default=None),
+    session: Session = Depends(get_session),
+):
+    """
+    WebSocket endpoint for real-time autopilot events.
+
+    Connect to /ws/autopilot?token=<jwt> to receive live updates.
+
+    Messages format:
+    {
+        "type": "autopilot_event",
+        "event": "rule_completed",
+        "data": {"rule_id": 1, "campaign_id": 42, "credits_used": 3}
+    }
+    """
+    if not token:
+        token = websocket.cookies.get("access_token")
+    if not token:
+        await websocket.close(code=4001, reason="Missing authentication token")
+        return
+
+    payload = verify_token(token)
+    if payload is None:
+        await websocket.close(code=4001, reason="Invalid or expired token")
+        return
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        await websocket.close(code=4001, reason="Invalid token payload")
+        return
+
+    user = session.get(User, int(user_id))
+    if user is None or not user.is_active:
+        await websocket.close(code=4001, reason="User not found or inactive")
+        return
+
+    user_id_int = int(user_id)
+    await autopilot_manager.connect(websocket, user_id_int)
+    try:
+        await websocket.send_json(
+            {
+                "type": "connected",
+                "message": "Connected to autopilot event stream",
+            }
+        )
+
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_json({"type": "pong"})
+    except WebSocketDisconnect:
+        autopilot_manager.disconnect(websocket, user_id_int)

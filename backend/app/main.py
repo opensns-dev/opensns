@@ -1,4 +1,7 @@
-from contextlib import asynccontextmanager
+import asyncio
+import logging
+from contextlib import asynccontextmanager, suppress
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -23,6 +26,7 @@ from app.api.variants import router as variants_router
 from app.api.team import router as team_router
 from app.api.api_keys import router as api_keys_router
 from app.api.scheduling import router as scheduling_router
+from app.api.autopilot import router as autopilot_router  # type: ignore[reportMissingImports]
 from app.api.custom_media import router as custom_media_router
 from app.api.white_label import router as white_label_router
 from app.api.ad_serving import serve_router
@@ -31,11 +35,14 @@ from app.api.ai_labeling import router as ai_labeling_router
 from app.api.providers import router as providers_router
 from app.api.audio import router as audio_router
 from app.api.waitlist import router as waitlist_router
+from app.api.notifications import router as notifications_router
 from app.initializers import register_engines
 from app.core.http_client import http_client_manager
 from app.core.error_handlers import register_error_handlers
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 MAX_REQUEST_SIZE = 10 * 1024 * 1024
 
@@ -68,6 +75,25 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+async def _autopilot_loop():
+    from sqlmodel import Session
+    from app.db import engine
+    from app.services.autopilot import autopilot_tick
+    from app.services.pipeline import run_campaign_pipeline
+
+    while True:
+        try:
+            with Session(engine) as session:
+                results = autopilot_tick(session)
+            for campaign_id, run_log_id, req_approval in results:
+                asyncio.create_task(
+                    run_campaign_pipeline(campaign_id, req_approval, autopilot_run_log_id=run_log_id)
+                )
+        except Exception:
+            logger.exception("autopilot tick failed")
+        await asyncio.sleep(60)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if settings.SENTRY_DSN:
@@ -79,7 +105,16 @@ async def lifespan(app: FastAPI):
         )
     init_db()
     register_engines()
+    autopilot_task = None
+    if settings.AUTOPILOT_ENABLED:
+        autopilot_task = asyncio.create_task(_autopilot_loop())
+        logger.info("Autopilot loop started")
     yield
+    if autopilot_task:
+        autopilot_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await autopilot_task
+        logger.info("Autopilot loop stopped")
     await http_client_manager.close()
 
 
@@ -92,7 +127,7 @@ app = FastAPI(
 
 # Rate limiting
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 cors_origins = [
     origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()
@@ -126,6 +161,7 @@ app.include_router(websocket_router)
 app.include_router(team_router)
 app.include_router(api_keys_router)
 app.include_router(scheduling_router)
+app.include_router(autopilot_router)
 app.include_router(custom_media_router)
 app.include_router(white_label_router)
 app.include_router(serve_router)
@@ -134,6 +170,7 @@ app.include_router(ai_labeling_router)
 app.include_router(providers_router)
 app.include_router(audio_router, prefix="/api")
 app.include_router(waitlist_router)
+app.include_router(notifications_router)
 
 # Register centralized error handlers
 register_error_handlers(app)

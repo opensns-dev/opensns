@@ -74,3 +74,12 @@ frontend/public/docs/
 
 # Sisyphus working files
 .sisyphus/
+
+# auto-added: build artifacts & tooling state
+node_modules/
+target/
+build/
+dist/
+.next/
+__pycache__/
+.ruff_cache/

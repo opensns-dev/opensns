@@ -7,7 +7,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, logout as apiLogout } from "@/lib/api";
+import {
+  api,
+  logout as apiLogout,
+  setRefreshToken,
+  setToken,
+} from "@/lib/api";
 import type { User } from "@/types";
 
 interface AuthContextType {
@@ -46,9 +51,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     formData.append("username", email);
     formData.append("password", password);
 
-    await api.post<{ access_token: string }>("/auth/login", formData, {
+    const response = await api.post<{
+      access_token: string;
+      refresh_token: string;
+    }>("/auth/login", formData, {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
+
+    setToken(response.data.access_token);
+    setRefreshToken(response.data.refresh_token);
 
     await fetchUser();
   };

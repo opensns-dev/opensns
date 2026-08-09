@@ -1,6 +1,59 @@
 import axios from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const ACCESS_TOKEN_KEY = "access_token";
+const REFRESH_TOKEN_KEY = "refresh_token";
+
+export function getToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+export function setToken(token: string | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (token) {
+    window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    return;
+  }
+
+  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+}
+
+export function getRefreshToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function setRefreshToken(token: string | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (token) {
+    window.localStorage.setItem(REFRESH_TOKEN_KEY, token);
+    return;
+  }
+
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+export function removeToken() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -8,6 +61,16 @@ export const api = axios.create({
     "Content-Type": "application/json",
   },
   withCredentials: true,
+});
+
+api.interceptors.request.use((config) => {
+  const token = getToken();
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
 });
 
 api.interceptors.response.use(
@@ -21,6 +84,8 @@ api.interceptors.response.use(
       if (requestUrl.includes("/auth/me")) {
         return Promise.reject(error);
       }
+
+      removeToken();
 
       if (
         path !== "/" &&
@@ -36,6 +101,7 @@ api.interceptors.response.use(
 export const logout = async () => {
   try {
     await api.post("/auth/logout");
-  } catch {
+  } finally {
+    removeToken();
   }
 };
